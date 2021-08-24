@@ -16,7 +16,7 @@
 // AD0 high = 0x69
 MPU6050 mpu;
 #define M_PI 3.141459
-int intPin = 23; //cislo pinu pres ktery je pripojen interrupt
+#define intPin 23 //cislo pinu pres ktery je pripojen interrupt
 
 bool dmpReady = false;  // když je DPM připraveno, obsahuje true
 uint8_t mpuIntStatus;   // stav externího přerušení z DPM
@@ -44,8 +44,8 @@ volatile bool PID;
 #define Kp  40
 #define Kd  0.05
 #define Ki  40
-#define sampleTime  0.005 //5ms
-#define targetAngle 0 //upravit podle polohy čidla v rovnováze
+#define sampleTime  0.005 //5ms = 200hz PIDloop
+#define targetAngle 0 //upravit dle instalace čidla - ve st.
 #define maxHodnota 300 // +- hodnota, která se saturuje po výstupu z PID -- upravit podle hoverboard vstupu
 volatile int vystup;
 volatile float currentAngle, prevAngle=0, error, prevError=0, errorSum=0;
@@ -101,12 +101,12 @@ if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
 
     //Výpis YAW/PITCH/ROLL
-    /*Serial.print("ypr\t");
+    Serial.print("ypr\t");
     Serial.print(ypr[0] * 180/M_PI);
     Serial.print("\t");
     Serial.print(ypr[1] * 180/M_PI);
     Serial.print("\t");
-    Serial.println(ypr[2] * 180/M_PI);*/
+    Serial.println(ypr[2] * 180/M_PI);
     currentAngle = ypr[1] * 180/M_PI; //uhel na ose pitch, lze vymenit za roll
 }
 }
@@ -139,7 +139,8 @@ if (devStatus == 0) {
     mpu.setDMPEnabled(true);
 
     // externí přerušení Arduina nabindujeme na funkci dmpDataReady
-    Serial.println(F("Enabling interrupt detection (Arduino external interrupt 0)..."));
+    Serial.println(F("Enabling interrupt detection on pin 23..."));
+    digitalPinToInterrupt(intPin);
     attachInterrupt(intPin, dmpDataReady, RISING);
     mpuIntStatus = mpu.getIntStatus();
 
