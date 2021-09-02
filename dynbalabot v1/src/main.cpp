@@ -6,11 +6,21 @@
 -pid
 
 */
-/*
+
 // Knihovna I2Cdev využívá knihovnu Wire
 #include "Wire.h"
 #include "I2Cdev.h"
 #include "MPU6050_6Axis_MotionApps20.h"
+#include <AccelStepper.h>
+#include <WiFi.h>
+#include <ESPmDNS.h>
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
+#include <math.h>
+
+
+AccelStepper stepper1(1, 2,13);
+AccelStepper stepper2(1, 32,33); 
 
 // Výchozí I2C adresa MPU-6050 je 0x68, ale pokud máte jinou, zde ji můžete uvést
 // AD0 low = 0x68
@@ -37,6 +47,7 @@ float ypr[3];           // [yaw, pitch, roll]   yaw/pitch/roll úhly
 
 volatile bool mpuInterrupt = false;     // true pokud DMP vyvolalo přerušení
 
+
 void ICACHE_RAM_ATTR dmpDataReady() {
 mpuInterrupt = true;
 }
@@ -46,14 +57,16 @@ volatile bool PID;
 #define Kd  0.05
 #define Ki  40
 #define sampleTime  0.005 //5ms = 200hz PIDloop
-#define targetAngle 0 //upravit dle instalace čidla - ve st.
+#define cilovyUhel 0 //upravit dle instalace čidla - ve st.
 #define maxHodnota 300 // +- hodnota, která se saturuje po výstupu z PID -- upravit podle hoverboard vstupu
 volatile int vystup;
-volatile float currentAngle, prevAngle=0, error, prevError=0, errorSum=0;
+volatile float soucasnyUhel, predUhel=0, error, predErr=0, soucetErr=0;
 hw_timer_t * timer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
-// With critical section
+const char* ssid = "Net";
+const char* password = "ruzicka123456789";
+// preruseni kazdych 5ms
 void IRAM_ATTR onTime() {
     PID = true;
 }
@@ -108,18 +121,65 @@ if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
     Serial.print(ypr[1] * 180/M_PI);
     Serial.print("\t");
     Serial.println(ypr[2] * 180/M_PI);
-    currentAngle = ypr[1] * 180/M_PI; //uhel na ose pitch, lze vymenit za roll
+    soucasnyUhel = ypr[1] * 180/M_PI; //uhel na ose pitch, lze vymenit za roll
 }
+}
+void configureOTA(){
+ArduinoOTA
+    .onStart([]() {
+      String type;
+      if (ArduinoOTA.getCommand() == U_FLASH)
+        type = "sketch";
+      else // U_SPIFFS
+        type = "filesystem";
+
+      // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+      Serial.println("Start updating " + type);
+    })
+    .onEnd([]() {
+      Serial.println("\nEnd");
+    })
+    .onProgress([](unsigned int progress, unsigned int total) {
+      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+    })
+    .onError([](ota_error_t error) {
+      Serial.printf("Error[%u]: ", error);
+      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+      else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    });
 }
 
 void setup() {
-
 // připojíme se na I2C sběrnici
 Wire.begin();
 
 // inicializujeme UART
 Serial.begin(115200);
-while (!Serial); // wait for Leonardo enumeration, others continue immediately
+Serial.println("Bootuju");
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  while (WiFi.waitForConnectResult() != WL_CONNECTED) {
+    Serial.println("Nelze se pripojit! Rebootuju...");
+    delay(5000);
+    ESP.restart();
+  }
+ArduinoOTA.setHostname("dynbalabot");
+configureOTA();
+ArduinoOTA.begin();
+
+  Serial.println("Pripraveno");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+    stepper1.setMaxSpeed(1000);
+    stepper1.setAcceleration(200);
+    stepper2.setMaxSpeed(1000);
+    stepper2.setAcceleration(200);
+    stepper1.setSpeed(500);
+    stepper2.setSpeed(500);
 
 // inicializujeme MPU-6050
 Serial.println(F("Initializing I2C devices..."));
@@ -141,7 +201,7 @@ if (devStatus == 0) {
 
     // externí přerušení Arduina nabindujeme na funkci dmpDataReady
     Serial.println(F("Enabling interrupt detection on pin 23..."));
-    digitalPinToInterrupt(intPin);
+   // digitalPinToInterrupt(intPin); //možná bude třeba aktivovat
     attachInterrupt(intPin, dmpDataReady, RISING);
     mpuIntStatus = mpu.getIntStatus();
 
@@ -175,87 +235,19 @@ if (devStatus == 0) {
 
 void loop() {
 nactiGyro();
+ArduinoOTA.handle();
 //ovladej motory - pracuj s promennou vystup
 if (PID) {
     PID = false;
-    error = currentAngle - targetAngle;
-    errorSum = errorSum + error;  
-    errorSum = constrain(errorSum, -maxHodnota, maxHodnota);
+    error = soucasnyUhel - cilovyUhel;
+    soucetErr = soucetErr + error;  
+    soucetErr = constrain(soucetErr, -maxHodnota, maxHodnota);
     //calculate output from P, I and D values
-    vystup = Kp*(error) + Ki*(errorSum)*sampleTime - Kd*(currentAngle-prevAngle)/sampleTime;
-    prevAngle = currentAngle;
+    vystup = Kp*(error) + Ki*(soucetErr)*sampleTime - Kd*(soucasnyUhel-predUhel)/sampleTime;
+    predUhel = soucasnyUhel;
    //tady se deje kod v pripade preruseni
     }
-}
-*/
-#include <AccelStepper.h>
-#include <WiFi.h>
-#include <ESPmDNS.h>
-#include <WiFiUdp.h>
-#include <ArduinoOTA.h>
 
-AccelStepper stepper1(1, 2,13);
-AccelStepper stepper2(1, 32,33); 
-
-const char* ssid = "Net";
-const char* password = "ruzicka123456789";
-
-void setup(){
-  Serial.begin(115200);
-  Serial.println("Booting");
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-  while (WiFi.waitForConnectResult() != WL_CONNECTED) {
-    Serial.println("Connection Failed! Rebooting...");
-    delay(5000);
-    ESP.restart();
-  }
-  ArduinoOTA.setHostname("dynbalabot");
-
-
-
-    
-ArduinoOTA
-    .onStart([]() {
-      String type;
-      if (ArduinoOTA.getCommand() == U_FLASH)
-        type = "sketch";
-      else // U_SPIFFS
-        type = "filesystem";
-
-      // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-      Serial.println("Start updating " + type);
-    })
-    .onEnd([]() {
-      Serial.println("\nEnd");
-    })
-    .onProgress([](unsigned int progress, unsigned int total) {
-      Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-    })
-    .onError([](ota_error_t error) {
-      Serial.printf("Error[%u]: ", error);
-      if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-      else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-      else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-      else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-      else if (error == OTA_END_ERROR) Serial.println("End Failed");
-    });
-
-  ArduinoOTA.begin();
-
-  Serial.println("Ready");
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
-
-    stepper1.setMaxSpeed(1000);
-    stepper1.setAcceleration(200);
-    stepper2.setMaxSpeed(1000);
-    stepper2.setAcceleration(200);
-    stepper1.setSpeed(500);
-    stepper2.setSpeed(500);
-}
-void loop(){
-ArduinoOTA.handle();
 stepper1.runSpeed();
 stepper2.runSpeed();
 }
