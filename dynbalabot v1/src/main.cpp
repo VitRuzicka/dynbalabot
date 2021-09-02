@@ -6,6 +6,7 @@
 -pid
 
 */
+/*
 // Knihovna I2Cdev využívá knihovnu Wire
 #include "Wire.h"
 #include "I2Cdev.h"
@@ -185,4 +186,12 @@ if (PID) {
     prevAngle = currentAngle;
    //tady se deje kod v pripade preruseni
     }
+}
+*/
+
+void setup(){
+
+}
+void loop(){
+
 }
