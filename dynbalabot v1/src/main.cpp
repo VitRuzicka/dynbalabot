@@ -14,6 +14,7 @@
 #include "ppm.h"
 #include "ota_sluzba.h"
 #include "mpu.h"
+#include "hoverboard_komunikace.h"
 
 
 const char* ssid = "Net";
@@ -41,14 +42,13 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
 
 void setup() {
-// připojíme se na I2C sběrnici
-Wire.begin();
 
+Wire.begin();  // připojíme se na I2C sběrnici kvůli MPU
 
-
+HoverSerial.begin(HOVER_SERIAL_BAUD);  //komunikace s hoverboardem
 Serial.begin(115200);
-  pinMode(2, INPUT_PULLUP); //PPM PIN
-  attachInterrupt(digitalPinToInterrupt(18), cteni_signalu, FALLING); //ve skutecnosti se jedna o vzestupnou hranu protoze pin je v PULLUP rezimu
+//pinMode(2, INPUT_PULLUP); //PPM PIN
+attachInterrupt(digitalPinToInterrupt(18), cteni_signalu, FALLING); //ve skutecnosti se jedna o vzestupnou hranu protoze pin je ppm pin v PULLUP rezimu
 
 // inicializujeme UART
 Serial.println("Bootuju");
@@ -56,8 +56,9 @@ Serial.println("Bootuju");
   WiFi.begin(ssid, password);
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {
     Serial.println("Nelze se pripojit! Rebootuju...");
-    delay(5000);
-    ESP.restart();
+    delay(3000);
+    //ESP.restart(); //esp se nebude restartovat bez wifi
+    break; 
   }
 
 configureOTA();
@@ -75,6 +76,9 @@ konfiguruj_gyro();
     stepper1.setSpeed(500);
     stepper2.setSpeed(500);
 
+//////////////////   preruseni pro PID  smycku    ///////////////////
+
+
 
     // Configure Prescaler to 80, as our timer runs @ 80Mhz
     // Giving an output of 80,000,000 / 80 = 1,000,000 ticks / second  80000 = 1000/sec
@@ -82,13 +86,10 @@ konfiguruj_gyro();
     timerAttachInterrupt(timer, &onTime, true);    
     
   // Fire Interrupt every 1s (1 million ticks)  pulvterina by byla  500 000 
-    timerAlarmWrite(timer, 50, true); //5 jako 5ms     
-    timerAlarmEnable(timer);
+    timerAlarmWrite(timer, 50, true); //50 jako 5ms     
+    timerAlarmEnable(timer);          //kazdych 5ms se promenna PID zmeni na true
+//////////////////////////////////////////////////////////////////////
 }
-
-// ================================================================
-// ===                    MAIN PROGRAM LOOP                     ===
-// ================================================================
 
 void loop() {
 nactiGyro();
@@ -102,13 +103,12 @@ if (PID) {
     //calculate output from P, I and D values
     vystup = Kp*(error) + Ki*(soucetErr)*sampleTime - Kd*(soucasnyUhel-predUhel)/sampleTime;
     predUhel = soucasnyUhel;
-   //tady se deje kod v pripade preruseni
     }
-
+/*
 stepper1.runSpeed();
 stepper2.runSpeed();
 
-/*
+
 zpracovani_signalu(); //nutno zavolat pred pouzitim signalu z promenne pro "update udaju"
 
 Serial.print(clip(ch[1], 1500, 0));Serial.print("\t");
@@ -117,5 +117,8 @@ Serial.print(ch[3]);Serial.print("\t");
 Serial.print(ch[4]);Serial.print("\t");
 Serial.print(ch[5]);Serial.print("\t");
 Serial.print(ch[6]);Serial.print("\n");
+
+
+Send(SMER, RYCHLOST);
 */
 }
