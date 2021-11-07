@@ -1,4 +1,9 @@
-
+/*
+*TODO:
+*-detekce failsafe (dva poslední kanály nikdy nemohou být 500 +-)
+*
+*
+*/
 #include<Arduino.h>
 #include"ppm.h"
 

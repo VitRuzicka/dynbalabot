@@ -1,17 +1,12 @@
 #include "hoverboard_komunikace.h"
-// *******************************************************************
-//  Arduino Nano 5V example code
-//  for   https://github.com/EmanuelFeru/hoverboard-firmware-hack-FOC
-//
-//  Copyright (C) 2019-2020 Emanuel FERU <aerdronix@gmail.com>
-//
-// *******************************************************************
-// INFO:
-// • This sketch uses the the Serial Software interface to communicate and send commands to the hoverboard
-// • The built-in (HW) Serial interface is used for debugging and visualization. In case the debugging is not needed,
-//   it is recommended to use the built-in Serial interface for full speed perfomace.
-// • The data packaging includes a Start Frame, checksum, and re-syncronization capability for reliable communication
-// 
+#define SERIAL_BAUD         115200      // [-] Baud rate for built-in Serial (used for the Serial Monitor)
+#define START_FRAME         0xABCD     	// [-] Start frme definition for reliable serial communication
+#define TIME_SEND           100         // [ms] Sending time interval
+#define SPEED_MAX_TEST      300         // [-] Maximum speed for testing
+// #define DEBUG_RX                        // [-] Debug received data. Prints all bytes to serial (comment-out to disable)
+
+
+SoftwareSerial HoverSerial(16, 17);
 // CONFIGURATION on the hoverboard side in config.h:
 // • Option 1: Serial on Right Sensor cable (short wired cable) - recommended, since the USART3 pins are 5V tolerant.
 //   #define CONTROL_SERIAL_USART3
@@ -23,10 +18,6 @@
 //   // #define DEBUG_SERIAL_USART2
 // *******************************************************************
 
-// ########################## DEFINES ##########################
-
-
-        // RX, TX na hoverboard konektoru
 
 // Global variables
 uint8_t idx = 0;                        // Index for new data pointer
@@ -34,6 +25,7 @@ uint16_t bufStartFrame;                 // Buffer Start Frame
 byte *p;                                // Pointer declaration for the new received data
 byte incomingByte;
 byte incomingBytePrev;
+
 
 typedef struct{
    uint16_t start;
@@ -56,11 +48,9 @@ typedef struct{
 } SerialFeedback;
 SerialFeedback Feedback;
 SerialFeedback NewFeedback;
-
-// ########################## SETUP ##########################
-
-
-// ########################## SEND ##########################
+void inicializujHB(){
+    HoverSerial.begin(HOVER_SERIAL_BAUD);  //komunikace s hoverboardem
+}
 void Send(int16_t uSteer, int16_t uSpeed)
 {
   // Create command
@@ -73,7 +63,6 @@ void Send(int16_t uSteer, int16_t uSpeed)
   HoverSerial.write((uint8_t *) &Command, sizeof(Command)); 
 }
 
-// ########################## RECEIVE ##########################
 void Receive()
 {
     // Check for new data availability in the Serial buffer
@@ -131,7 +120,6 @@ void Receive()
     incomingBytePrev = incomingByte;
 }
 
-// ########################## LOOP ##########################
 /*
 unsigned long iTimeSend = 0;
 int iTestMax = SPEED_MAX_TEST;
@@ -154,5 +142,3 @@ void loop(void)
   if (iTest > iTestMax) iTest = -iTestMax;
 
 }*/
-
-// ########################## END ##########################

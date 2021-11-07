@@ -3,10 +3,10 @@
 #include <math.h>
 #include "mpu.h"
 
-
+uint pulzy;
 
 MPU6050 mpu;
-#define M_PI 3.141459
+
 #define intPin 23 //cislo pinu pres ktery je pripojen interrupt
 
 
@@ -31,12 +31,14 @@ volatile bool mpuInterrupt = false;     // true pokud DMP vyvolalo přerušení
 
 void ICACHE_RAM_ATTR dmpDataReady() {
 mpuInterrupt = true;
+pulzy++;
 }
 
 
 // preruseni kazdych 5ms
 void IRAM_ATTR onTime() {
     PID = true;
+    
 }
 
 // ================================================================
@@ -83,15 +85,14 @@ if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
     mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
 
     //Výpis YAW/PITCH/ROLL
-    Serial.print("ypr\t");
-    Serial.print(ypr[0] * 180/M_PI);
-    Serial.print("\t");
-    Serial.print(ypr[1] * 180/M_PI);
-    Serial.print("\t");
-    Serial.println(ypr[2] * 180/M_PI);
+    
     soucasnyUhel = ypr[1] * 180/M_PI; //uhel na ose pitch, lze vymenit za roll
+    //mpu.resetFIFO();
 }
 }
+
+
+
 void konfiguruj_gyro(){
     // inicializujeme MPU-6050
 Serial.println(F("Initializing I2C devices..."));
@@ -112,7 +113,7 @@ if (devStatus == 0) {
     mpu.setDMPEnabled(true);
 
     // externí přerušení Arduina nabindujeme na funkci dmpDataReady
-    Serial.println(F("Enabling interrupt detection on pin 23..."));
+    Serial.println(F("Enabling interrupt detection on pin 18..."));
    // digitalPinToInterrupt(intPin); //možná bude třeba aktivovat
     attachInterrupt(intPin, dmpDataReady, RISING);
     mpuIntStatus = mpu.getIntStatus();
