@@ -38,7 +38,7 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 unsigned long predchoziCas = 0;        // will store last time LED was updated
 
 // constants won't change:
-const long interval = 100;  
+const long interval = 10;  
 
 
 void setup() {
@@ -126,7 +126,7 @@ unsigned long soucasnyCas = millis();
 
   Serial.print(clip(ch[1], 1500, 0));Serial.print("\t");
   Serial.print(ch[2]);Serial.print("\t");
-  Serial.print(ch[3]);Serial.print("\t");
+  Serial.print(clip(ch[3], 1000, 0));Serial.print("\t");
   Serial.print(ch[4]);Serial.print("\t");
   Serial.print(ch[5]);Serial.print("\t");
   Serial.print(ch[6]);Serial.print("\n");
@@ -137,6 +137,9 @@ unsigned long soucasnyCas = millis();
   Serial.print(ypr[1] * 180/M_PI);
   Serial.print("\t");
   Serial.println(ypr[2] * 180/M_PI);
+
+  //posílání stavu do hoverbaordu
+  Send(0, clip(ch[3], 1000, 0));
 
   }
 }
