@@ -3,21 +3,10 @@
 #define START_FRAME         0xABCD     	// [-] Start frme definition for reliable serial communication
 #define TIME_SEND           100         // [ms] Sending time interval
 #define SPEED_MAX_TEST      300         // [-] Maximum speed for testing
-// #define DEBUG_RX                        // [-] Debug received data. Prints all bytes to serial (comment-out to disable)
+//#define DEBUG_RX                        // [-] Debug received data. Prints all bytes to serial (comment-out to disable)
 
 
-SoftwareSerial HoverSerial(16, 17);
-// CONFIGURATION on the hoverboard side in config.h:
-// • Option 1: Serial on Right Sensor cable (short wired cable) - recommended, since the USART3 pins are 5V tolerant.
-//   #define CONTROL_SERIAL_USART3
-//   #define FEEDBACK_SERIAL_USART3
-//   // #define DEBUG_SERIAL_USART3
-// • Option 2: Serial on Left Sensor cable (long wired cable) - use only with 3.3V devices! The USART2 pins are not 5V tolerant!
-//   #define CONTROL_SERIAL_USART2
-//   #define FEEDBACK_SERIAL_USART2
-//   // #define DEBUG_SERIAL_USART2
-// *******************************************************************
-
+//SoftwareSerial HoverSerial;
 
 // Global variables
 uint8_t idx = 0;                        // Index for new data pointer
@@ -49,7 +38,7 @@ typedef struct{
 SerialFeedback Feedback;
 SerialFeedback NewFeedback;
 void inicializujHB(){
-    HoverSerial.begin(HOVER_SERIAL_BAUD);  //komunikace s hoverboardem
+    Serial2.begin(HOVER_SERIAL_BAUD);  //komunikace s hoverboardem
 }
 void Send(int16_t uSteer, int16_t uSpeed)
 {
@@ -60,14 +49,14 @@ void Send(int16_t uSteer, int16_t uSpeed)
   Command.checksum = (uint16_t)(Command.start ^ Command.steer ^ Command.speed);
 
   // Write to Serial
-  HoverSerial.write((uint8_t *) &Command, sizeof(Command)); 
+  Serial2.write((uint8_t *) &Command, sizeof(Command)); 
 }
 
 void Receive()
 {
     // Check for new data availability in the Serial buffer
-    if (HoverSerial.available()) {
-        incomingByte 	  = HoverSerial.read();                                   // Read the incoming byte
+    if (Serial2.available()) {
+        incomingByte 	  = Serial2.read();                                   // Read the incoming byte
         bufStartFrame	= ((uint16_t)(incomingByte) << 8) | incomingBytePrev;       // Construct the start frame
     }
     else {

@@ -38,14 +38,15 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 unsigned long predchoziCas = 0;        // will store last time LED was updated
 
 // constants won't change:
-const long interval = 10;  
+const long interval = 100;  
 
 
 void setup() {
 
   Wire.begin();  // připojíme se na I2C sběrnici kvůli MPU
 
-  void inicializujHB();
+  //void inicializujHB();
+  Serial2.begin(115200);
   Serial.begin(115200);
   delay(100);
   Serial.println("Bootuju");
@@ -120,10 +121,19 @@ unsigned long soucasnyCas = millis();
   if (soucasnyCas- predchoziCas >= interval) {
     // save the last time you blinked the LED
     predchoziCas = soucasnyCas;
-    Serial.print("pulzy: ");
-    Serial.println((1000/interval)*pulzy);
+    //Serial.print("pulzy: ");
+    //Serial.println((1000/interval)*pulzy);
     pulzy = 0;
-
+    Receive();
+    if(soucasnyCas < 1000)
+    {
+      Send(0,0);
+    }
+    else{
+      Send(0,clip(ch[3], 1000, 0));
+      //Serial.print(clip(ch[3], 1000, 0));Serial.print("\t");
+    }
+/*
   Serial.print(clip(ch[1], 1500, 0));Serial.print("\t");
   Serial.print(ch[2]);Serial.print("\t");
   Serial.print(clip(ch[3], 1000, 0));Serial.print("\t");
@@ -137,9 +147,8 @@ unsigned long soucasnyCas = millis();
   Serial.print(ypr[1] * 180/M_PI);
   Serial.print("\t");
   Serial.println(ypr[2] * 180/M_PI);
-
-  //posílání stavu do hoverbaordu
-  Send(0, clip(ch[3], 1000, 0));
-
+  */
+ 
+  
   }
 }
