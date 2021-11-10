@@ -10,7 +10,7 @@
 // Knihovna I2Cdev využívá knihovnu Wire
 #include <Arduino.h>
 #include <math.h>
-#include "ppm.h"
+#include "prijimac.h"
 #include "ota_sluzba.h"
 #include "mpu.h"
 #include "hoverboard_komunikace.h"
@@ -30,6 +30,8 @@ volatile int vystup;
 volatile float soucasnyUhel, predUhel=0, error, predErr=0, soucetErr=0;
 
 
+SBUS prijimac(Serial1);
+
 
 
 hw_timer_t * timer = NULL;
@@ -44,10 +46,11 @@ const long interval = 100;
 void setup() {
 
   Wire.begin();  // připojíme se na I2C sběrnici kvůli MPU
-
+  
   //void inicializujHB();
   Serial2.begin(115200);
   Serial.begin(115200);
+  prijimac.begin();
   delay(100);
   Serial.println("Bootuju");
   WiFi.mode(WIFI_STA);
@@ -79,8 +82,7 @@ void setup() {
     timerAlarmEnable(timer);          //kazdych 5ms se promenna PID zmeni na true
 //////////////////////////////////////////////////////////////////////
     konfiguruj_gyro();
-    attachInterrupt(digitalPinToInterrupt(18), cteni_signalu, FALLING); //zapojeni preruseni pro PPM signal
-
+   
 
          
 }
@@ -109,7 +111,6 @@ if (PID) {
 
 
 
-
 unsigned long soucasnyCas = millis();
 //debug serial info:
   if (soucasnyCas- predchoziCas >= interval) {
@@ -124,12 +125,17 @@ unsigned long soucasnyCas = millis();
       Send(0,0);
     }
     else{
-      Send(0,clip(ch[3], 1000, 0));
+      Send(0,clip(channels[3], 1000, 0));
       //Serial.print(clip(ch[3], 1000, 0));Serial.print("\t");
 
     }
-    zpracovani_signalu(); //nutno zavolat pred pouzitim signalu z promenne pro "update udaju"
 
+if(prijimac.read(&channels[0], &failSafe, &lostFrame)){
+  Serial.print("kanal 3: ");
+  Serial.println(channels[3]);
+
+}
+    
 /*
   Serial.print(clip(ch[1], 1500, 0));Serial.print("\t");
   Serial.print(ch[2]);Serial.print("\t");

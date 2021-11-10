@@ -16,6 +16,7 @@ ArduinoOTA
     })
     .onEnd([]() {
       Serial.println("\nEnd");
+      ESP.restart();
     })
     .onProgress([](unsigned int progress, unsigned int total) {
       Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
