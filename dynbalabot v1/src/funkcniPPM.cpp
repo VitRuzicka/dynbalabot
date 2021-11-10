@@ -24,7 +24,7 @@ uint clip(int vstup, int max, int min){
 
 }
 
-void cteni_signalu()  {
+void ICACHE_RAM_ATTR cteni_signalu()  {
 soucasnaProdleva=micros();                        //doba od poslední padající hrany
 prodleva=soucasnaProdleva-predchoziProdleva;      //výpočet té doby
 predchoziProdleva=soucasnaProdleva;               // stará hrana je nová
@@ -40,11 +40,14 @@ void zpracovani_signalu(){
 int i,j,k=0;
   for(k=14;k>-1;k--){
     if(ch1[k]>10000){         //detekce 10 000ms dlouhé pauzy v proměnné a rozdělení na pakety s časy  
-    j=k;}   
+    j=k;
+    //Serial.println("detekovana pauza");
+    }   
   }                   
   for(i=1;i<=6;i++){
-    ch[i]=(ch1[i+j]-1000);}   //dosad sest hodnot bez separacni pauzy
-  }
+    ch[i]=(ch1[i+j]-1000);}   //dosad sest hodnot s prevodem 1000-2000 -> 0-1000
+      //Serial.println("Zapsana data do jine promenne");
+      }
 
 
 

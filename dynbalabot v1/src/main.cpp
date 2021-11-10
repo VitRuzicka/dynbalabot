@@ -60,7 +60,6 @@ void setup() {
   }
 
   configureOTA();
-  ArduinoOTA.setHostname("dynbalabot");
   ArduinoOTA.begin();
   Serial.println("Pripraveno");
   Serial.print("IP address: ");
@@ -87,8 +86,10 @@ void setup() {
 }
 
 void loop() {
-nactiGyro();
+  
+nactiGyro(); 
 ArduinoOTA.handle();
+
 //ovladej motory - pracuj s promennou vystup
 /*
 if (PID) {
@@ -100,20 +101,13 @@ if (PID) {
     vystup = Kp*(error) + Ki*(soucetErr)*sampleTime - Kd*(soucasnyUhel-predUhel)/sampleTime;
     predUhel = soucasnyUhel;
     }
+!!!!*/
 
 
 
 
 
 
-
-
-
-
-Send(0,0);
-*/
-
-zpracovani_signalu(); //nutno zavolat pred pouzitim signalu z promenne pro "update udaju"
 
 
 unsigned long soucasnyCas = millis();
@@ -132,7 +126,10 @@ unsigned long soucasnyCas = millis();
     else{
       Send(0,clip(ch[3], 1000, 0));
       //Serial.print(clip(ch[3], 1000, 0));Serial.print("\t");
+
     }
+    zpracovani_signalu(); //nutno zavolat pred pouzitim signalu z promenne pro "update udaju"
+
 /*
   Serial.print(clip(ch[1], 1500, 0));Serial.print("\t");
   Serial.print(ch[2]);Serial.print("\t");
@@ -147,8 +144,8 @@ unsigned long soucasnyCas = millis();
   Serial.print(ypr[1] * 180/M_PI);
   Serial.print("\t");
   Serial.println(ypr[2] * 180/M_PI);
-  */
+  !!!!
  
-  
+  */
   }
 }
