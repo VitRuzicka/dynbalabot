@@ -50,7 +50,7 @@ void setup() {
   //void inicializujHB();
   Serial2.begin(115200);
   Serial.begin(115200);
-  prijimac.begin();
+  prijimac.begin(18,19, true);;
   delay(100);
   Serial.println("Bootuju");
   WiFi.mode(WIFI_STA);
@@ -105,7 +105,20 @@ if (PID) {
     }
 !!!!*/
 
+if(prijimac.read(&channels[0], &failSafe, &lostFrame)){
+  
 
+Serial.print("roll 0: ");
+  Serial.print(channels[0]);
+  Serial.print("\t");
+    
+Serial.print("pitch 1: ");
+  Serial.print(channels[1]);
+  Serial.print("\t");
+  Serial.print("ARM: ");
+  Serial.println(channels[4]);
+  
+}
 
 
 
@@ -130,12 +143,7 @@ unsigned long soucasnyCas = millis();
 
     }
 
-if(prijimac.read(&channels[0], &failSafe, &lostFrame)){
-  Serial.print("kanal 3: ");
-  Serial.println(channels[3]);
 
-}
-    
 /*
   Serial.print(clip(ch[1], 1500, 0));Serial.print("\t");
   Serial.print(ch[2]);Serial.print("\t");
