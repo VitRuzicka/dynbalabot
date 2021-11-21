@@ -5,4 +5,4 @@ extern uint16_t channels[16];
 extern bool failSafe;
 extern bool lostFrame;
 
-uint clip(int, int,int);
+int clip(int, int,int);

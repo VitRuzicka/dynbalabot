@@ -37,6 +37,7 @@ typedef struct{
 } SerialFeedback;
 SerialFeedback Feedback;
 SerialFeedback NewFeedback;
+
 void inicializujHB(){
     Serial2.begin(HOVER_SERIAL_BAUD);  //komunikace s hoverboardem
 }

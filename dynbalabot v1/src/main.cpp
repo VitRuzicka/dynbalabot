@@ -20,13 +20,15 @@ const char* ssid = "Net";
 const char* password = "ruzicka123456789";
 
 volatile bool PID;
-#define Kp  10
-#define Kd  0.00
+#define Kp  18
+#define Kd  0.1
 #define Ki  0
-#define runTime  0.005 //5ms = 200hz PIDloop
-#define offsetUhel -2.07 //upravit dle instalace čidla - ve st. = NUNTO zautomatizovat na tlačítko
+#define runTime  0.05 //5ms = 200hz PIDloop
+float offsetUhel = -1.9; //upravit dle instalace čidla - ve st. = NUNTO zautomatizovat na tlačítko
 #define cilovyUhel 0     // tento úhel bude měněn ovladačem (setpoint)
 #define maxHodnota 300 // +- hodnota, která se saturuje po výstupu z PID -- upravit podle hoverboard vstupu
+#define DEADBAND 4
+#define deadMot 83
 volatile int vystup;
 volatile float soucasnyUhel, predUhel=0, error, predErr=0, soucetErr=0;
 
@@ -77,9 +79,9 @@ void setup() {
 
     // Configure Prescaler to 80, as our timer runs @ 80Mhz
     // Giving an output of 80,000,000 / 80 = 1,000,000 ticks / second  80000 = 1000/sec
-    timer = timerBegin(0, 8000, true);                
+    timer = timerBegin(0, 8000, true);   //rozdělí vteřinu na 10 000 tiků             
     timerAttachInterrupt(timer, &onTime, true);    
-    timerAlarmWrite(timer, runTime*10000, true); //5ms viz define     
+    timerAlarmWrite(timer, runTime*1000, true); //50 tiků = 5ms viz define     
     timerAlarmEnable(timer);          //kazdych 5ms se promenna PID zmeni na true
 //////////////////////////////////////////////////////////////////////
     konfiguruj_gyro();
@@ -109,16 +111,25 @@ if (PID) {
       Send(0,0);
     }
     else{
-      //Send(0,clip(channels[2]-230, 1000, 0));  //pro testování plynu přes ovladač
-      //Serial.print(clip(channels[2], 1000, 0));Serial.print("\t");
-      
+      //Send(0,-clip(channels[2]-230, 300, -300));  //pro testování plynu přes ovladač
+      //Serial.print(clip(channels[2]-230, 300, -300));Serial.print("\t");
+      if(vystup > DEADBAND){
+        vystup += deadMot;
+
+      }
+      else if(vystup < -DEADBAND){
+        vystup -= deadMot;
+      }
+      Send(0, clip(vystup, 300, -300));
 
     }
     }
 
 
 if(prijimac.read(&channels[0], &failSafe, &lostFrame)){
-  
+  if(channels[5] > 500){
+    offsetUhel = ypr[2] * 180/M_PI;
+  }
 
   
 }
@@ -134,14 +145,15 @@ unsigned long soucasnyCas = millis();
     predchoziCas = soucasnyCas;
     //Serial.print("pulzy: ");
     //Serial.println((1000/interval)*pulzy);
-    pulzy = 0;
+    //pulzy = 0;
     Receive();
+    /*
 Serial.print("Roll: ");
 Serial.print(ypr[2] * 180/M_PI);
 Serial.print("PID: ");
 Serial.println(vystup);
 
-/*
+
 
   Serial.print("roll 0: ");
   Serial.print(channels[0]);

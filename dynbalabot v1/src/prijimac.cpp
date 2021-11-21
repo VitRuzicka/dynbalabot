@@ -5,7 +5,7 @@ uint16_t channels[16];
 bool failSafe;
 bool lostFrame;
 
-uint clip(int vstup, int max, int min){
+int clip(int vstup, int max, int min){
   if(vstup > max){
     return max;
   }

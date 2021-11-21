@@ -31,14 +31,14 @@ volatile bool mpuInterrupt = false;     // true pokud DMP vyvolalo přerušení
 
 void ICACHE_RAM_ATTR dmpDataReady() {
 mpuInterrupt = true;
-pulzy++;
+
 }
 
 
-// preruseni kazdych 5ms
+// preruseni kazdych 5ms   //preruseni kvuli PID
 void IRAM_ATTR onTime() {
     PID = true;
-    
+    //pulzy++;
 }
 
 // ================================================================
