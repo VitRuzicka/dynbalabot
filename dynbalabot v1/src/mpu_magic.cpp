@@ -86,7 +86,7 @@ if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
 
     //Výpis YAW/PITCH/ROLL
     
-    soucasnyUhel = ypr[1] * 180/M_PI; //uhel na ose pitch, lze vymenit za roll
+    soucasnyUhel = ypr[2] * 180/M_PI; //uhel na ose pitch, lze vymenit za roll
     //mpu.resetFIFO();
 }
 }

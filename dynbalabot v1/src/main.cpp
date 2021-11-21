@@ -20,11 +20,12 @@ const char* ssid = "Net";
 const char* password = "ruzicka123456789";
 
 volatile bool PID;
-#define Kp  0
+#define Kp  10
 #define Kd  0.00
 #define Ki  0
-#define sampleTime  0.005 //5ms = 200hz PIDloop
-#define cilovyUhel 0 //upravit dle instalace čidla - ve st.
+#define runTime  0.005 //5ms = 200hz PIDloop
+#define offsetUhel -2.07 //upravit dle instalace čidla - ve st. = NUNTO zautomatizovat na tlačítko
+#define cilovyUhel 0     // tento úhel bude měněn ovladačem (setpoint)
 #define maxHodnota 300 // +- hodnota, která se saturuje po výstupu z PID -- upravit podle hoverboard vstupu
 volatile int vystup;
 volatile float soucasnyUhel, predUhel=0, error, predErr=0, soucetErr=0;
@@ -78,7 +79,7 @@ void setup() {
     // Giving an output of 80,000,000 / 80 = 1,000,000 ticks / second  80000 = 1000/sec
     timer = timerBegin(0, 8000, true);                
     timerAttachInterrupt(timer, &onTime, true);    
-    timerAlarmWrite(timer, sampleTime*10000, true); //5ms viz define     
+    timerAlarmWrite(timer, runTime*10000, true); //5ms viz define     
     timerAlarmEnable(timer);          //kazdych 5ms se promenna PID zmeni na true
 //////////////////////////////////////////////////////////////////////
     konfiguruj_gyro();
@@ -93,30 +94,32 @@ nactiGyro();
 ArduinoOTA.handle();
 
 //ovladej motory - pracuj s promennou vystup
-/*
+
 if (PID) {
     PID = false;
-    error = soucasnyUhel - cilovyUhel; //radek 92 v mpu_magic.cpp
+    error = (soucasnyUhel - offsetUhel) - cilovyUhel ; //radek 92 v mpu_magic.cpp
     soucetErr = soucetErr + error;  
     soucetErr = constrain(soucetErr, -maxHodnota, maxHodnota);
     //calculate output from P, I and D values
-    vystup = Kp*(error) + Ki*(soucetErr)*sampleTime - Kd*(soucasnyUhel-predUhel)/sampleTime;
+    vystup = Kp*(error) + Ki*(soucetErr)*runTime - Kd*(soucasnyUhel-predUhel)/runTime;
     predUhel = soucasnyUhel;
+
+    if(failSafe || channels[4] < 500)
+    {
+      Send(0,0);
     }
-!!!!*/
+    else{
+      //Send(0,clip(channels[2]-230, 1000, 0));  //pro testování plynu přes ovladač
+      //Serial.print(clip(channels[2], 1000, 0));Serial.print("\t");
+      
+
+    }
+    }
+
 
 if(prijimac.read(&channels[0], &failSafe, &lostFrame)){
   
 
-Serial.print("roll 0: ");
-  Serial.print(channels[0]);
-  Serial.print("\t");
-    
-Serial.print("pitch 1: ");
-  Serial.print(channels[1]);
-  Serial.print("\t");
-  Serial.print("ARM: ");
-  Serial.println(channels[4]);
   
 }
 
@@ -133,33 +136,36 @@ unsigned long soucasnyCas = millis();
     //Serial.println((1000/interval)*pulzy);
     pulzy = 0;
     Receive();
-    if(soucasnyCas < 1000)
-    {
-      Send(0,0);
-    }
-    else{
-      Send(0,clip(channels[3], 1000, 0));
-      //Serial.print(clip(ch[3], 1000, 0));Serial.print("\t");
-
-    }
-
+Serial.print("Roll: ");
+Serial.print(ypr[2] * 180/M_PI);
+Serial.print("PID: ");
+Serial.println(vystup);
 
 /*
-  Serial.print(clip(ch[1], 1500, 0));Serial.print("\t");
-  Serial.print(ch[2]);Serial.print("\t");
-  Serial.print(clip(ch[3], 1000, 0));Serial.print("\t");
-  Serial.print(ch[4]);Serial.print("\t");
-  Serial.print(ch[5]);Serial.print("\t");
-  Serial.print(ch[6]);Serial.print("\n");
 
+  Serial.print("roll 0: ");
+  Serial.print(channels[0]);
+  Serial.print("\t");
+  Serial.print("pitch 1: ");
+  Serial.print(channels[1]);
+  Serial.print("\t");
+  Serial.print("throttle: ");
+  Serial.print(clip(channels[2]-230, 1000, 0));
+  Serial.print("\t");
+  Serial.print("ARM: ");
+  Serial.println(channels[4]);
+  Serial.print("\t");
+  Serial.print(failSafe);
+
+  
   Serial.print("ypr\t");
   Serial.print(ypr[0] * 180/M_PI);
   Serial.print("\t");
   Serial.print(ypr[1] * 180/M_PI);
   Serial.print("\t");
   Serial.println(ypr[2] * 180/M_PI);
-  !!!!
  
-  */
+ */
+  
   }
 }

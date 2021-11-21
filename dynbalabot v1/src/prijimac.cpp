@@ -1,9 +1,4 @@
-/*
-*TODO:
-*-detekce failsafe (dva poslední kanály nikdy nemohou být 500 +-)
-*
-*
-*/
+
 #include<Arduino.h>
 #include"prijimac.h"
 uint16_t channels[16];
