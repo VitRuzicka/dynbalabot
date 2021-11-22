@@ -20,15 +20,15 @@ const char* ssid = "Net";
 const char* password = "ruzicka123456789";
 
 volatile bool PID;
-#define Kp  18
-#define Kd  0.1
-#define Ki  0
-#define runTime  0.05 //5ms = 200hz PIDloop
-float offsetUhel = -1.9; //upravit dle instalace čidla - ve st. = NUNTO zautomatizovat na tlačítko
-#define cilovyUhel 0     // tento úhel bude měněn ovladačem (setpoint)
-#define maxHodnota 300 // +- hodnota, která se saturuje po výstupu z PID -- upravit podle hoverboard vstupu
-#define DEADBAND 4
-#define deadMot 83
+#define Kp  17  // 14 pouze pro P.....18 pro spojení s D
+#define Kd  -0.6 //                   -0.5 pro spojení s P
+#define Ki  0  //nemá efekt na výsledek :(
+#define runTime  0.01 //5ms = 200hz PIDloop , upraveno na 100Hz
+float offsetUhel = -1.9; //upravit dle instalace čidla - ve st. - kalibrováno pomoci prearm tlačítka
+float cilovyUhel  = 0.0;     // tento úhel bude měněn ovladačem (setpoint)
+#define maxHodnota 500 // +- hodnota, která se saturuje po výstupu z PID -- upravit podle hoverboard vstupu
+#define DEADBAND 2   // určuje jak tenká je hranice (bod kdy systém zůstane v klidu) =====  Hystereze
+#define deadMot 90  //kompenzace deadbandu motorů
 volatile int vystup;
 volatile float soucasnyUhel, predUhel=0, error, predErr=0, soucetErr=0;
 
@@ -81,7 +81,7 @@ void setup() {
     // Giving an output of 80,000,000 / 80 = 1,000,000 ticks / second  80000 = 1000/sec
     timer = timerBegin(0, 8000, true);   //rozdělí vteřinu na 10 000 tiků             
     timerAttachInterrupt(timer, &onTime, true);    
-    timerAlarmWrite(timer, runTime*1000, true); //50 tiků = 5ms viz define     
+    timerAlarmWrite(timer, runTime*10000, true); //50 tiků = 5ms viz define     
     timerAlarmEnable(timer);          //kazdych 5ms se promenna PID zmeni na true
 //////////////////////////////////////////////////////////////////////
     konfiguruj_gyro();
@@ -111,8 +111,8 @@ if (PID) {
       Send(0,0);
     }
     else{
-      //Send(0,-clip(channels[2]-230, 300, -300));  //pro testování plynu přes ovladač
-      //Serial.print(clip(channels[2]-230, 300, -300));Serial.print("\t");
+      //Send(0,clip(channels[2]-230, 400, -400));  //pro testování plynu přes ovladač
+      //Serial.print(clip(channels[2]-230, 300, -300));Serial.println("");
       if(vystup > DEADBAND){
         vystup += deadMot;
 
@@ -120,7 +120,8 @@ if (PID) {
       else if(vystup < -DEADBAND){
         vystup -= deadMot;
       }
-      Send(0, clip(vystup, 300, -300));
+      Send(0, clip(vystup, maxHodnota, -maxHodnota));
+      cilovyUhel = map(channels[1], 200, 1800, 5, -5);
 
     }
     }
@@ -147,10 +148,11 @@ unsigned long soucasnyCas = millis();
     //Serial.println((1000/interval)*pulzy);
     //pulzy = 0;
     Receive();
-    /*
+    //Serial.println(channels[1]);
+  /*  
 Serial.print("Roll: ");
 Serial.print(ypr[2] * 180/M_PI);
-Serial.print("PID: ");
+Serial.print(" PID: ");
 Serial.println(vystup);
 
 
