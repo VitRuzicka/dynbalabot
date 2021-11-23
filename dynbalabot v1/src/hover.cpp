@@ -109,7 +109,19 @@ void Receive()
     // Update previous states
     incomingBytePrev = incomingByte;
 }
+void stopMot(){
+    Send(0,0);
+}
+int kompenzaceDEADBAND(int in, int DEADBAND, int offset){
+    if(in > DEADBAND){
+        in += offset;
 
+      }
+      else if(in < -DEADBAND){
+        in -= offset;
+      }
+      return in;
+}
 /*
 unsigned long iTimeSend = 0;
 int iTestMax = SPEED_MAX_TEST;

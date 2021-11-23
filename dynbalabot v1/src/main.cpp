@@ -2,24 +2,34 @@
 -vyčistit a zjednodušit kód :DDD kdo to sem napsal
 -použití pouze pitch a roll
 -zprovoznit ovladani a posouvani setpointu (řízení)
--přidat komunikaci s hoveboardem
--pid
 
 */
+/////zde se aktivují příslušné funkční celky
+#define OTAupload  //musí být aktivována wifi při použití OTA
+#define WIFI
+#define DIAG
+#define WS
 
-// Knihovna I2Cdev využívá knihovnu Wire
+
 #include <Arduino.h>
 #include <math.h>
 #include "prijimac.h"
-#include "ota_sluzba.h"
 #include "mpu.h"
 #include "hoverboard_komunikace.h"
 #include "prevodovka.h"
+#include "web.h"
+
+#ifdef OTAupload
+#include "ota_sluzba.h"
+#endif
+
+
+
 
 const char* ssid = "Net";
 const char* password = "ruzicka123456789";
 
-volatile bool PID;
+
 #define Kp  17  // 14 pouze pro P.....18 pro spojení s D
 #define Kd  -0.6 //                   -0.5 pro spojení s P
 #define Ki  0  //nemá efekt na výsledek :(
@@ -29,6 +39,7 @@ float cilovyUhel  = 0.0;     // tento úhel bude měněn ovladačem (setpoint)
 #define maxHodnota 500 // +- hodnota, která se saturuje po výstupu z PID -- upravit podle hoverboard vstupu
 #define DEADBAND 2   // určuje jak tenká je hranice (bod kdy systém zůstane v klidu) =====  Hystereze
 #define deadMot 90  //kompenzace deadbandu motorů
+volatile bool PID;
 volatile int vystup;
 volatile float soucasnyUhel, predUhel=0, error, predErr=0, soucetErr=0;
 
@@ -40,45 +51,50 @@ SBUS prijimac(Serial1);
 hw_timer_t * timer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
-unsigned long predchoziCas = 0;        // will store last time LED was updated
-
-// constants won't change:
+unsigned long predchoziCas = 0;        // promenne k debugovaci smycce
 const long interval = 100;  
 
 
 void setup() {
 
   Wire.begin();  // připojíme se na I2C sběrnici kvůli MPU
-  
-  //void inicializujHB();
-  Serial2.begin(115200);
+  inicializujHB();
   Serial.begin(115200);
   prijimac.begin(18,19, true);;
   delay(100);
+#ifdef DIAG
   Serial.println("Bootuju");
+#endif
+#ifdef WIFI
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-  while (WiFi.waitForConnectResult() != WL_CONNECTED) {
+  while (WiFi.waitForConnectResult() != WL_CONNECTED) {  //pridat error ledku
     Serial.println("Nelze se pripojit! Rebootuju...");
     delay(3000);
     //ESP.restart(); //esp se nebude restartovat bez wifi
     break; 
-  }
-
-  configureOTA();
-  ArduinoOTA.begin();
   Serial.println("Pripraveno");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
-
+  }
+#endif
+#ifdef OTAupload
+  configureOTA();
+  ArduinoOTA.begin();
+#endif
+#ifdef WS
+ if( !SPIFFS.begin()){
+    Serial.println("Error mounting SPIFFS"); //pridat error LEDKU
+    while(1);
+  }
+#endif
   nastav_krokace();
   
 //////////////////   preruseni pro PID  smycku    ///////////////////
 
 
 
-    // Configure Prescaler to 80, as our timer runs @ 80Mhz
-    // Giving an output of 80,000,000 / 80 = 1,000,000 ticks / second  80000 = 1000/sec
+   //80mhz, delitel 8000 tzn to udela 10000tiku za sekundu
     timer = timerBegin(0, 8000, true);   //rozdělí vteřinu na 10 000 tiků             
     timerAttachInterrupt(timer, &onTime, true);    
     timerAlarmWrite(timer, runTime*10000, true); //50 tiků = 5ms viz define     
@@ -93,11 +109,14 @@ void setup() {
 void loop() {
   
 nactiGyro(); 
+#ifdef OTAupload
 ArduinoOTA.handle();
+#endif
+#ifdef WS
+void WSloop();
+#endif
 
-//ovladej motory - pracuj s promennou vystup
-
-if (PID) {
+if (PID) { //spousteno podle runTime
     PID = false;
     error = (soucasnyUhel - offsetUhel) - cilovyUhel ; //radek 92 v mpu_magic.cpp
     soucetErr = soucetErr + error;  
@@ -108,26 +127,21 @@ if (PID) {
 
     if(failSafe || channels[4] < 500)
     {
-      Send(0,0);
+      stopMot(); //nouzové zastavení
     }
     else{
       //Send(0,clip(channels[2]-230, 400, -400));  //pro testování plynu přes ovladač
       //Serial.print(clip(channels[2]-230, 300, -300));Serial.println("");
-      if(vystup > DEADBAND){
-        vystup += deadMot;
-
-      }
-      else if(vystup < -DEADBAND){
-        vystup -= deadMot;
-      }
-      Send(0, clip(vystup, maxHodnota, -maxHodnota));
-      cilovyUhel = map(channels[1], 200, 1800, 5, -5);
+      
+      Send(0, constrain(kompenzaceDEADBAND(vystup, DEADBAND, deadMot), -maxHodnota, maxHodnota)); //tento prikaz posila vystup PID na motory
+      //cilovyUhel = map(channels[1], 200, 1800, 5, -5); //rizeni uhlu z ovladace...nutno zmenit za lateralni pohyb
 
     }
     }
 
 
 if(prijimac.read(&channels[0], &failSafe, &lostFrame)){
+  //kalibrace uhlu kolmého k zemi (aby robot stal rovne)
   if(channels[5] > 500){
     offsetUhel = ypr[2] * 180/M_PI;
   }
@@ -140,9 +154,7 @@ if(prijimac.read(&channels[0], &failSafe, &lostFrame)){
 
 
 unsigned long soucasnyCas = millis();
-//debug serial info:
   if (soucasnyCas- predchoziCas >= interval) {
-    // save the last time you blinked the LED
     predchoziCas = soucasnyCas;
     //Serial.print("pulzy: ");
     //Serial.println((1000/interval)*pulzy);

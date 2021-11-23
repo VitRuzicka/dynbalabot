@@ -6,3 +6,5 @@
 void inicializujHB();
 void Send(int16_t, int16_t);
 void Receive();
+void stopMot();
+int kompenzaceDEADBAND(int, int, int);
