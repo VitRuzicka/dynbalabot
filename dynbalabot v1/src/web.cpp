@@ -1,74 +1,79 @@
 #include <ESPAsyncWebServer.h>
-#include <WebSocketsServer.h>
 #include "web.h"
+#include <ArduinoJson.h>
 
-const char *msg_toggle_led = "toggleLED";
-const char *msg_get_led = "getLEDState";
 const int dns_port = 53;
 const int http_port = 80;
 const int ws_port = 1337;
 const int led_pin = 15;
 
+
 AsyncWebServer server(80);
-WebSocketsServer webSocket = WebSocketsServer(1337);
+AsyncWebSocket ws("/ws");
 char msg_buf[10];
 int led_state = 0;
 
+void odesliHodnoty(){
+    const uint8_t size = JSON_OBJECT_SIZE(1);
+    StaticJsonDocument<size> json; //nutno definovat velikost, ta se zmeni podle obsahu
 
-void onWebSocketEvent(uint8_t client_num,
-                      WStype_t type,
-                      uint8_t * payload,
-                      size_t length) {
+    json["konstantaP"] = String(Kp);  //nacteni hodnot do jsonu
+    json["konstantaI"] = String(Ki);
+    json["konstantaD"] = String(Kd);
+    char data[50]; //snad by slo zmensit = vypsat velikost dat odeslanych pres json
+    size_t len = serializeJson(json, data); //prevedeni dat na json (ulozen v data) a jeho velikost len
 
-  // Figure out the type of WebSocket event
-  switch(type) {
+    ws.textAll(data, len); // odeslani dat vsem klientum
+}
 
-    // Client has disconnected
-    case WStype_DISCONNECTED:
-      Serial.printf("[%u] Disconnected!\n", client_num);
+void zpracujZpravu(void *arg, uint8_t *data, size_t len) {
+  AwsFrameInfo *info = (AwsFrameInfo*)arg;
+  if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
+   
+
+        const uint8_t size = JSON_OBJECT_SIZE(1);
+        StaticJsonDocument<size> json;
+        DeserializationError err = deserializeJson(json, data);
+        if (err) {
+            Serial.print(F("nelze dekodovat JSON"));
+            Serial.println(err.c_str());
+            return;
+        }
+
+        const char *akce = json["akce"];
+        const char *konstantaP = json["konstantaP"];
+        const char *konstantaI = json["konstantaI"];
+        const char *konstantaD = json["konstantaD"];  
+        if (strcmp(akce, "update") == 0) {  //pokud je hodnota akce:hodnota dojde k odeslani aktualnich hodnot, pokud ale bude neco jineho (0), pak se nactou PID data 
+            odesliHodnoty();
+        }
+        else{
+        if(isAlphaNumeric(atof(konstantaP))){
+            Kp = atof(konstantaP);
+        }
+        if(isAlphaNumeric(atof(konstantaI))){
+            Ki = atof(konstantaI);
+        }
+        if(isAlphaNumeric(atof(konstantaD))){
+            Kd = atof(konstantaD);
+        }
+        }
+  }
+}
+void udalost(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType type,
+             void *arg, uint8_t *data, size_t len) {
+  switch (type) {
+    case WS_EVT_CONNECT:
+      Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
       break;
-
-    // New client has connected
-    case WStype_CONNECTED:
-      {
-        IPAddress ip = webSocket.remoteIP(client_num);
-        Serial.printf("[%u] Connection from ", client_num);
-        Serial.println(ip.toString());
-      }
+    case WS_EVT_DISCONNECT:
+      Serial.printf("WebSocket client #%u disconnected\n", client->id());
       break;
-
-    // Handle text messages from client
-    case WStype_TEXT:
-
-      // Print out raw message
-      Serial.printf("[%u] Received text: %s\n", client_num, payload);
-
-      // Toggle LED
-      if ( strcmp((char *)payload, "toggleLED") == 0 ) {
-        led_state = led_state ? 0 : 1;
-        Serial.printf("Toggling LED to %u\n", led_state);
-        digitalWrite(led_pin, led_state);
-
-      // Report the state of the LED
-      } else if ( strcmp((char *)payload, "getLEDState") == 0 ) {
-        sprintf(msg_buf, "%d", led_state);
-        Serial.printf("Sending to [%u]: %s\n", client_num, msg_buf);
-        webSocket.sendTXT(client_num, msg_buf);
-
-      // Message not recognized
-      } else {
-        Serial.println("[%u] Message not recognized");
-      }
+    case WS_EVT_DATA:
+      zpracujZpravu(arg, data, len);
       break;
-
-    // For everything else: do nothing
-    case WStype_BIN:
-    case WStype_ERROR:
-    case WStype_FRAGMENT_TEXT_START: //zjistit co to dělá
-    case WStype_FRAGMENT_BIN_START:  //...
-    case WStype_FRAGMENT:            // ..
-    case WStype_FRAGMENT_FIN:
-    default:
+    case WS_EVT_PONG:
+    case WS_EVT_ERROR:
       break;
   }
 }
@@ -102,11 +107,11 @@ void setupWS(){
   //server.on("/style.css", HTTP_GET, onCSSRequest);
   server.onNotFound(onPageNotFound);
   server.begin();
-  webSocket.begin();
-  webSocket.onEvent(onWebSocketEvent);
+  ws.onEvent(udalost);
+  server.addHandler(&ws);
   
 }
 
 void WSloop() {
-  webSocket.loop();
+  ws.cleanupClients();
 }

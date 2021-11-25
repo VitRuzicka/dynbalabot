@@ -30,9 +30,9 @@ const char* ssid = "Net";
 const char* password = "ruzicka123456789";
 
 
-#define Kp  17  // 14 pouze pro P.....18 pro spojení s D
-#define Kd  -0.6 //                   -0.5 pro spojení s P
-#define Ki  0  //nemá efekt na výsledek :(
+float Kp = 17;  // 14 pouze pro P.....18 pro spojení s D
+float Kd = 0.6; //                   -0.5 pro spojení s P
+float Ki = 0;  //nemá efekt na výsledek :(
 #define runTime  0.01 //5ms = 200hz PIDloop , upraveno na 100Hz
 float offsetUhel = -1.9; //upravit dle instalace čidla - ve st. - kalibrováno pomoci prearm tlačítka
 float cilovyUhel  = 0.0;     // tento úhel bude měněn ovladačem (setpoint)
@@ -122,7 +122,7 @@ if (PID) { //spousteno podle runTime
     soucetErr = soucetErr + error;  
     soucetErr = constrain(soucetErr, -maxHodnota, maxHodnota);
     //calculate output from P, I and D values
-    vystup = Kp*(error) + Ki*(soucetErr)*runTime - Kd*(soucasnyUhel-predUhel)/runTime;
+    vystup = Kp*(error) + Ki*(soucetErr)*runTime + Kd*(soucasnyUhel-predUhel)/runTime;
     predUhel = soucasnyUhel;
 
     if(failSafe || channels[4] < 500)

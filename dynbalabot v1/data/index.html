@@ -1,37 +1,49 @@
+
+
 <!DOCTYPE html>
 <meta charset="utf-8" />
 <title>WebSocket Test</title>
 
 <script language="javascript" type="text/javascript">
 
-var url = "ws://self.location.host:1337/"; //nutno upravit, zkusit self.location.host
-var output;
-var button;
-var canvas;
-var context;
+var url = "ws://${window.location.hostname}/ws"; //nutno upravit, zkusit ${window.location.hostname}
+var parametrP;
+var parametrI;
+var parametrD;
+var tlacitko;
+
+
+// Call the init function as soon as the page loads
+window.addEventListener("load", init, false);
 
 function init() { //volano kdyz se stranka nacte
+/*
+TODO:
+zbavit se zbytečných funkcí
+spojit button s odesíláním dat
+spojit načtení stránky s příjmem dat z ESP (vymyslet protokol)
+změnit defines na proměnné
+použít eeprom ? nebo config.txt v spiffs
+vyzkoušet na ESP
 
-    button = document.getElementById("submit");
-    output = document.getElementById("output");
-    canvas = document.getElementById("led");
+
+1 odeslání update do esp
+2 zapsání hodnot do polí
+3 po stisku tlačítka odešli obsah polí do esp
+4 aktualizuj současnou hodnotu z esp
+
+*/
+    parametrP = document.getElementById("in1");
+    parametrI = document.getElementById("in2");
+    parametrD = document.getElementById("in3");
+    tlacitko = document.getElementById("submit")
     
-    context = canvas.getContext("2d");
-    context.arc(25, 25, 15, 0, Math.PI * 2, false);
-    context.lineWidth = 3;
-    context.strokeStyle = "black";
-    context.stroke();
-    context.fillStyle = "black";
-    context.fill();
     
-    // Connect to WebSocket server
     wsConnect(url);
 }
 
-// Call this to connect to the WebSocket server
 function wsConnect(url) {
     
-    // Connect to WebSocket server
     websocket = new WebSocket(url);
     
     // Assign callbacks
@@ -44,71 +56,58 @@ function wsConnect(url) {
 
 function onOpen(evt) { //zde načíst PID hodnoty
 
-    // Log connection state
     console.log("Connected");
     
-    // Enable button
-    button.disabled = false;
+    tlacitko.disabled = false;
     
-    // Get the current state of the LED
-    doSend("getLEDState");
+    odesliPID("update");    //pozadani ESP o aktualni PID hodnoty         
 }
 
-// Called when the WebSocket connection is closed
 function onClose(evt) {
 
     // Log disconnection state
     console.log("Disconnected");
     
     // Disable button
-    button.disabled = true;
+    tlacitko.disabled = true;
     
     // Try to reconnect after a few seconds
     setTimeout(function() { wsConnect(url) }, 2000);
 }
 
-// Called when a message is received from the server
 function onMessage(evt) {
 
-    // Print out our received message
     console.log("Received: " + evt.data);
     
-    // Update circle graphic with LED state
-    switch(evt.data) {
-        case "0":
-            console.log("LED is off");
-            context.fillStyle = "black";
-            context.fill();
-            break;
-        case "1":
-            console.log("LED is on");
-            context.fillStyle = "red";
-            context.fill();
-            break;
-        default:
-            break;
+    let data = JSON.parse(evt.data); //parsování dat z jsonu z esp
+
+    for (var i = 0; i < 3; i++){
+       // document.getElementById(key).innerHTML = myObj[key];
+        document.getElementById("in"+ (i+1).toString()).value = data.status;
     }
 }
 
-// Called when a WebSocket error occurs
+
 function onError(evt) {
     console.log("ERROR: " + evt.data);
 }
 
-// Sends a message to the server (and prints it to the console)
-function doSend(message) {
-    console.log("Sending: " + message);
-    websocket.send(message);
+function odesliPID(x){ //stupni parametr je string, v pripade prikazu na ziskani dat musi byt volana fce: odesliPID( "update")
+    websocket.send(JSON.strigify({"akce" : x, //co udělá když string převedu na string ?
+                                  "konstantaP" : parametrP.value.toString(), 
+                                  "konstantaI" : parametrI.value.toString(),
+                                  "konstantaD" : parametrD.value.toString()
+                                })
+    )
 }
 
-// Called whenever the HTML button is pressed
-function onPress() {
-    doSend("toggleLED");
-    doSend("getLEDState");
+//slouzi k odeslani novych hodnot do esp
+function aktualizuj() {
+    //odesliESP("tumasData"); //zde json
+    odesliPID("0"); //jiny parametr nez update znamena ze se zapisou PID udaje ze stranky do esp
+ 
 }
 
-// Call the init function as soon as the page loads
-window.addEventListener("load", init, false);
 
 </script>
 
@@ -118,12 +117,12 @@ window.addEventListener("load", init, false);
   
     <form>
         <label>P: </label>
-        <input type="number" id="P" value="1" step="0.01"><br> 
+        <input type="number" id="in1" value="1" step="0.01"><br> 
         <label>I: </label>
-        <input type="number" id="I" value="1" step="0.01"><br>
+        <input type="number" id="in2" value="1" step="0.01"><br>
         <label>D: </label>
-        <input type="number" id="D" value="1" step="0.01"><br><br>
-        <input type="submit" id="submit" value="Odeslat">
+        <input type="number" id="in3" value="1" step="0.01"><br><br>
+        <input type="submit" id="submit" value="Odeslat" onclick=aktualizuj()>
 
     
     
