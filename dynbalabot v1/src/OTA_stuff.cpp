@@ -16,6 +16,7 @@ ArduinoOTA
     })
     .onEnd([]() {
       Serial.println("\nEnd");
+      delay(10);
       ESP.restart();
     })
     .onProgress([](unsigned int progress, unsigned int total) {

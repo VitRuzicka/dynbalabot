@@ -1,7 +1,4 @@
-#include <ESPAsyncWebServer.h>
 #include "web.h"
-#include <ArduinoJson.h>
-
 const int dns_port = 53;
 const int http_port = 80;
 const int ws_port = 1337;
@@ -14,16 +11,18 @@ char msg_buf[10];
 int led_state = 0;
 
 void odesliHodnoty(){
-    const uint8_t size = JSON_OBJECT_SIZE(1);
+    const uint8_t size = JSON_OBJECT_SIZE(4);
     StaticJsonDocument<size> json; //nutno definovat velikost, ta se zmeni podle obsahu
 
-    json["konstantaP"] = String(Kp);  //nacteni hodnot do jsonu
-    json["konstantaI"] = String(Ki);
-    json["konstantaD"] = String(Kd);
-    char data[50]; //snad by slo zmensit = vypsat velikost dat odeslanych pres json
+    json["kP"] = String(Kp);  //nacteni hodnot do jsonu
+    json["kI"] = String(Ki);
+    json["kD"] = String(Kd);
+    char data[200]; //snad by slo zmensit = vypsat velikost dat odeslanych pres json
     size_t len = serializeJson(json, data); //prevedeni dat na json (ulozen v data) a jeho velikost len
 
     ws.textAll(data, len); // odeslani dat vsem klientum
+    Serial.print("[ESP]odesilam data klientum: ");
+    Serial.println(data);
 }
 
 void zpracujZpravu(void *arg, uint8_t *data, size_t len) {
@@ -31,7 +30,7 @@ void zpracujZpravu(void *arg, uint8_t *data, size_t len) {
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
    
 
-        const uint8_t size = JSON_OBJECT_SIZE(1);
+        const uint8_t size = JSON_OBJECT_SIZE(4);
         StaticJsonDocument<size> json;
         DeserializationError err = deserializeJson(json, data);
         if (err) {
@@ -39,11 +38,18 @@ void zpracujZpravu(void *arg, uint8_t *data, size_t len) {
             Serial.println(err.c_str());
             return;
         }
+        
 
         const char *akce = json["akce"];
-        const char *konstantaP = json["konstantaP"];
-        const char *konstantaI = json["konstantaI"];
-        const char *konstantaD = json["konstantaD"];  
+        const char *konstantaP = json["kP"];
+        const char *konstantaI = json["kI"];
+        const char *konstantaD = json["kD"];  
+        Serial.println("[ESP]obdrzeny hodnoty: ");
+        Serial.print((char*)akce);       Serial.print("\t");
+        Serial.print((char*)konstantaP); Serial.print("\t"); 
+        Serial.print((char*)konstantaI); Serial.print("\t"); 
+        Serial.print((char*)konstantaD); Serial.print("\t"); Serial.println(); 
+
         if (strcmp(akce, "update") == 0) {  //pokud je hodnota akce:hodnota dojde k odeslani aktualnich hodnot, pokud ale bude neco jineho (0), pak se nactou PID data 
             odesliHodnoty();
         }
@@ -64,10 +70,10 @@ void udalost(AsyncWebSocket *server, AsyncWebSocketClient *client, AwsEventType 
              void *arg, uint8_t *data, size_t len) {
   switch (type) {
     case WS_EVT_CONNECT:
-      Serial.printf("WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
+      Serial.printf("[SERVER]WebSocket client #%u connected from %s\n", client->id(), client->remoteIP().toString().c_str());
       break;
     case WS_EVT_DISCONNECT:
-      Serial.printf("WebSocket client #%u disconnected\n", client->id());
+      Serial.printf("[SERVER]WebSocket client #%u disconnected\n", client->id());
       break;
     case WS_EVT_DATA:
       zpracujZpravu(arg, data, len);

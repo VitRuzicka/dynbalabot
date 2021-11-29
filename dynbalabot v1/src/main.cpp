@@ -65,7 +65,7 @@ void setup() {
 #ifdef DIAG
   Serial.println("Bootuju");
 #endif
-#ifdef WIFI
+//#ifdef WIFI
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {  //pridat error ledku
@@ -73,21 +73,23 @@ void setup() {
     delay(3000);
     //ESP.restart(); //esp se nebude restartovat bez wifi
     break; 
+
+  }
   Serial.println("Pripraveno");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
-  }
-#endif
-#ifdef OTAupload
+//#endif
+//#ifdef OTAupload
   configureOTA();
   ArduinoOTA.begin();
-#endif
-#ifdef WS
+//#endif
+//#ifdef WS
  if( !SPIFFS.begin()){
     Serial.println("Error mounting SPIFFS"); //pridat error LEDKU
     while(1);
   }
-#endif
+  setupWS();
+//#endif
   nastav_krokace();
   
 //////////////////   preruseni pro PID  smycku    ///////////////////
@@ -109,12 +111,12 @@ void setup() {
 void loop() {
   
 nactiGyro(); 
-#ifdef OTAupload
+//#ifdef OTAupload
 ArduinoOTA.handle();
-#endif
-#ifdef WS
+//#endif
+//#ifdef WS
 void WSloop();
-#endif
+//#endif
 
 if (PID) { //spousteno podle runTime
     PID = false;

@@ -6,11 +6,14 @@
 
 <script language="javascript" type="text/javascript">
 
-var url = "ws://${window.location.hostname}/ws"; //nutno upravit, zkusit ${window.location.hostname}
+var url = 'ws://' + window.location.hostname + '/ws'; //nutno upravit, zkusit ${window.location.hostname}, location.host
+
 var parametrP;
 var parametrI;
 var parametrD;
 var tlacitko;
+
+
 
 
 // Call the init function as soon as the page loads
@@ -19,24 +22,13 @@ window.addEventListener("load", init, false);
 function init() { //volano kdyz se stranka nacte
 /*
 TODO:
-zbavit se zbytečných funkcí
-spojit button s odesíláním dat
-spojit načtení stránky s příjmem dat z ESP (vymyslet protokol)
-změnit defines na proměnné
-použít eeprom ? nebo config.txt v spiffs
-vyzkoušet na ESP
-
-
-1 odeslání update do esp
-2 zapsání hodnot do polí
-3 po stisku tlačítka odešli obsah polí do esp
-4 aktualizuj současnou hodnotu z esp
 
 */
-    parametrP = document.getElementById("in1");
-    parametrI = document.getElementById("in2");
-    parametrD = document.getElementById("in3");
+    parametrP = document.getElementById("konstantaP");
+    parametrI = document.getElementById("konstantaI");
+    parametrD = document.getElementById("konstantaD");
     tlacitko = document.getElementById("submit")
+   
     
     
     wsConnect(url);
@@ -81,10 +73,11 @@ function onMessage(evt) {
     
     let data = JSON.parse(evt.data); //parsování dat z jsonu z esp
 
-    for (var i = 0; i < 3; i++){
-       // document.getElementById(key).innerHTML = myObj[key];
-        document.getElementById("in"+ (i+1).toString()).value = data.status;
-    }
+    
+        parametrP.value = Number(data.kP);
+        parametrI.value = Number(data.kI);
+        parametrD.value = Number(data.kD);
+
 }
 
 
@@ -93,12 +86,13 @@ function onError(evt) {
 }
 
 function odesliPID(x){ //stupni parametr je string, v pripade prikazu na ziskani dat musi byt volana fce: odesliPID( "update")
-    websocket.send(JSON.strigify({"akce" : x, //co udělá když string převedu na string ?
-                                  "konstantaP" : parametrP.value.toString(), 
-                                  "konstantaI" : parametrI.value.toString(),
-                                  "konstantaD" : parametrD.value.toString()
+    websocket.send(JSON.stringify({"akce" : x, //co udělá když string převedu na string ?
+                                  "kP" : parametrP.value.toString(), 
+                                  "kI" : parametrI.value.toString(),
+                                  "kD" : parametrD.value.toString()
                                 })
-    )
+    );
+    console.log("odesilam: akce " + x + " " + parametrP.value.toString() + " " + parametrI.value.toString() + " " + parametrD.value.toString())
 }
 
 //slouzi k odeslani novych hodnot do esp
@@ -112,17 +106,19 @@ function aktualizuj() {
 </script>
 
 <h2>PID parametry</h2>
+<link rel="icon" href="data:;base64,iVBORw0KGgo="> 
 
 <table>
   
     <form>
         <label>P: </label>
-        <input type="number" id="in1" value="1" step="0.01"><br> 
+        <input type="number" id="konstantaP" value="1.0" step="0.01"><br> 
         <label>I: </label>
-        <input type="number" id="in2" value="1" step="0.01"><br>
+        <input type="number" id="konstantaI" value="1.0" step="0.01"><br>
         <label>D: </label>
-        <input type="number" id="in3" value="1" step="0.01"><br><br>
-        <input type="submit" id="submit" value="Odeslat" onclick=aktualizuj()>
+        <input type="number" id="konstantaD" value="1.0" step="0.01"><br>
+        <br>
+        <input type="button" id="submit" value="Odeslat" onclick=aktualizuj()>
 
     
     
