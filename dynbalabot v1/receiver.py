@@ -11,12 +11,10 @@ class Klient(WebSocketClient):
     def closed(self, code, reason=None):
         print("Spojeni ukonceno ", code, reason)
     def received_message(self, obsah):
-        print(obsah)
-        zprava = json.loads(obsah)
-        try:
-            print(zprava['akce'])
-        except IndexError: #nutno doladit podle toho co to hodi
-            print("hodnota nenalezena v poli")
+        #print(obsah)
+        zprava = json.loads(obsah.data.decode("utf-8"))
+        if len(zprava) == 4:
+            print(zprava['nap'])
             
             
 if __name__ == '__main__':
@@ -27,6 +25,8 @@ if __name__ == '__main__':
             ws = Klient(websocketHost) #pripoj se pres websockety
             ws.connect()
             print("Pripojeno k WS, cekam na data")
+            while 1:
+                time.sleep(0.01)     
         else:
             print("dynbalabot neni pripojen k internetu")
             exit()
