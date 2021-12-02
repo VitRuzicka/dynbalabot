@@ -106,20 +106,27 @@ Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MP
 Serial.println(F("Initializing DMP..."));
 devStatus = mpu.dmpInitialize();
 
-// ujistíme se, že funguje
+// ujist// ujistíme se, že funguje
 if (devStatus == 0) {
     // zapneme DMP
+#ifdef DIAG
     Serial.println(F("Enabling DMP..."));
+#endif
     mpu.setDMPEnabled(true);
 
+#ifdef DIAG
     // externí přerušení Arduina nabindujeme na funkci dmpDataReady
     Serial.println(F("Enabling interrupt detection on pin 18..."));
    // digitalPinToInterrupt(intPin); //možná bude třeba aktivovat
+#endif
     attachInterrupt(intPin, dmpDataReady, RISING);
     mpuIntStatus = mpu.getIntStatus();
 
+#ifdef DIAG
     Serial.println(F("DMP ready! Waiting for first interrupt..."));
+#endif
     dmpReady = true;
+
 
     // zjistíme si, jak velké pakety DMP vrací
     packetSize = mpu.dmpGetFIFOPacketSize();

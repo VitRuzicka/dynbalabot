@@ -3,7 +3,7 @@ const int dns_port = 53;
 const int http_port = 80;
 const int ws_port = 1337;
 const int led_pin = 15;
-
+bool telemetrie = false;
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
@@ -17,12 +17,30 @@ void odesliHodnoty(){
     json["kP"] = String(Kp);  //nacteni hodnot do jsonu
     json["kI"] = String(Ki);
     json["kD"] = String(Kd);
+   
     char data[200]; //snad by slo zmensit = vypsat velikost dat odeslanych pres json
     size_t len = serializeJson(json, data); //prevedeni dat na json (ulozen v data) a jeho velikost len
 
     ws.textAll(data, len); // odeslani dat vsem klientum
     Serial.print("[ESP]odesilam data klientum: ");
     Serial.println(data);
+}
+void odesliTelemetrii(){ //zde ještě přijdou data z PID atd
+  if(telemetrie){
+    const uint8_t size = JSON_OBJECT_SIZE(5); //nutno navýšit podle počtu prvků
+    StaticJsonDocument<size> json; //nutno definovat velikost, ta se zmeni podle obsahu
+
+    json["nap"] = String(VCC);
+    json["pid"] =  channels[4] < 500 ? "BĚŽÍ" : "NEBĚŽÍ";
+    json["fs"] =  failSafe ? "OK" : "NOT OK";
+    json["mpuOK"] =  devStatus == 0 ? "OK" : "NOT OK";
+    char data[200]; 
+    size_t len = serializeJson(json, data); //prevedeni dat na json (ulozen v data) a jeho velikost len
+
+    ws.textAll(data, len); // odeslani dat vsem klientum
+    //Serial.print("[ESP]odesilam telemetrii klientum: ");
+    //Serial.println(data);
+  }
 }
 
 void zpracujZpravu(void *arg, uint8_t *data, size_t len) {
@@ -52,6 +70,9 @@ void zpracujZpravu(void *arg, uint8_t *data, size_t len) {
 
         if (strcmp(akce, "update") == 0) {  //pokud je hodnota akce:hodnota dojde k odeslani aktualnich hodnot, pokud ale bude neco jineho (0), pak se nactou PID data 
             odesliHodnoty();
+        }
+        else if(strcmp(akce, "tel") == 0){
+          telemetrie = !telemetrie;
         }
         else{
         if(isAlphaNumeric(atof(konstantaP))){

@@ -3,8 +3,13 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include <ESPAsyncWebServer.h>
+#include "mpu.h"
+#include "prijimac.h"
+extern float VCC;
+extern bool telemetrie;
 extern float Kp;
 extern float Kd;
 extern float Ki;
+void odesliTelemetrii();
 void setupWS();
 void WSloop();

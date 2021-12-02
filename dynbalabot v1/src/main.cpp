@@ -7,7 +7,7 @@
 /////zde se aktivují příslušné funkční celky
 #define OTAupload  //musí být aktivována wifi při použití OTA
 #define WIFI
-#define DIAG
+//#define DIAG
 #define WS
 
 
@@ -18,13 +18,17 @@
 #include "hoverboard_komunikace.h"
 #include "prevodovka.h"
 #include "web.h"
+#include "led.h"
 
 #ifdef OTAupload
 #include "ota_sluzba.h"
 #endif
 
 
-
+#define IOPIN1 27
+#define IOPIN2 14
+#define IOPIN3 12
+#define VCCPIN 39
 
 const char* ssid = "Net";
 const char* password = "ruzicka123456789";
@@ -53,10 +57,10 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
 unsigned long predchoziCas = 0;        // promenne k debugovaci smycce
 const long interval = 100;  
-
+float VCC = 0.0;
 
 void setup() {
-
+  zluta(1);
   Wire.begin();  // připojíme se na I2C sběrnici kvůli MPU
   inicializujHB();
   Serial.begin(115200);
@@ -65,11 +69,12 @@ void setup() {
 #ifdef DIAG
   Serial.println("Bootuju");
 #endif
-//#ifdef WIFI
+#ifdef WIFI
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {  //pridat error ledku
     Serial.println("Nelze se pripojit! Rebootuju...");
+    zluta(0);
     delay(3000);
     //ESP.restart(); //esp se nebude restartovat bez wifi
     break; 
@@ -78,18 +83,18 @@ void setup() {
   Serial.println("Pripraveno");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
-//#endif
-//#ifdef OTAupload
+#endif
+#ifdef OTAupload
   configureOTA();
   ArduinoOTA.begin();
-//#endif
-//#ifdef WS
+#endif
+#ifdef WS
  if( !SPIFFS.begin()){
     Serial.println("Error mounting SPIFFS"); //pridat error LEDKU
     while(1);
   }
   setupWS();
-//#endif
+#endif
   nastav_krokace();
   
 //////////////////   preruseni pro PID  smycku    ///////////////////
@@ -109,14 +114,15 @@ void setup() {
 }
 
 void loop() {
-  
+ WiFi.status() == WL_CONNECTED ? zluta(1) : zluta(0); //indikace pripojeni
+
 nactiGyro(); 
-//#ifdef OTAupload
+#ifdef OTAupload
 ArduinoOTA.handle();
-//#endif
-//#ifdef WS
+#endif
+#ifdef WS
 void WSloop();
-//#endif
+#endif
 
 if (PID) { //spousteno podle runTime
     PID = false;
@@ -158,12 +164,10 @@ if(prijimac.read(&channels[0], &failSafe, &lostFrame)){
 unsigned long soucasnyCas = millis();
   if (soucasnyCas- predchoziCas >= interval) {
     predchoziCas = soucasnyCas;
-    //Serial.print("pulzy: ");
-    //Serial.println((1000/interval)*pulzy);
-    //pulzy = 0;
     Receive();
-    //Serial.println(channels[1]);
-  /*  
+    VCC = analogRead(VCCPIN)*(33.0/4096)+1;
+    odesliTelemetrii();
+ #ifdef DIAG  
 Serial.print("Roll: ");
 Serial.print(ypr[2] * 180/M_PI);
 Serial.print(" PID: ");
@@ -192,8 +196,9 @@ Serial.println(vystup);
   Serial.print(ypr[1] * 180/M_PI);
   Serial.print("\t");
   Serial.println(ypr[2] * 180/M_PI);
+  Serial.println(VCC);
  
- */
+#endif
   
   }
 }
