@@ -11,7 +11,7 @@ char msg_buf[10];
 int led_state = 0;
 
 void odesliHodnoty(){
-    const uint8_t size = JSON_OBJECT_SIZE(4);
+    const uint8_t size = JSON_OBJECT_SIZE(4); //nutno navýšit podle počtu prvků
     StaticJsonDocument<size> json; //nutno definovat velikost, ta se zmeni podle obsahu
 
     json["kP"] = String(Kp);  //nacteni hodnot do jsonu

@@ -2,7 +2,7 @@
 
 <!DOCTYPE html>
 <meta charset="utf-8" />
-<title>Dynbalabot portal</title>
+<title>WebSocket Test</title>
 
 <script language="javascript" type="text/javascript">
 
@@ -72,7 +72,7 @@ function onMessage(evt) {
     console.log("Received: " + evt.data);
     
     let data = JSON.parse(evt.data); //parsování dat z jsonu z esp
-
+    console.log("pocet prvku: " + data.length.toString()); //na zakladě tohoto se rozhodnout jestli přišly PID udaje, nebo to ignorovat
     
         parametrP.value = Number(data.kP);
         parametrI.value = Number(data.kI);

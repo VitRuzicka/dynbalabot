@@ -109,19 +109,16 @@ devStatus = mpu.dmpInitialize();
 // ujistíme se, že funguje
 if (devStatus == 0) {
     // zapneme DMP
-#ifdef DIAG
     Serial.println(F("Enabling DMP..."));
-#endif
     mpu.setDMPEnabled(true);
-#ifdef DIAG
+
     // externí přerušení Arduina nabindujeme na funkci dmpDataReady
     Serial.println(F("Enabling interrupt detection on pin 18..."));
-#endif
+   // digitalPinToInterrupt(intPin); //možná bude třeba aktivovat
     attachInterrupt(intPin, dmpDataReady, RISING);
     mpuIntStatus = mpu.getIntStatus();
-#ifdef DIAG
+
     Serial.println(F("DMP ready! Waiting for first interrupt..."));
-#endif
     dmpReady = true;
 
     // zjistíme si, jak velké pakety DMP vrací

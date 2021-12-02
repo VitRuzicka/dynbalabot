@@ -15,7 +15,7 @@ class Klient(WebSocketClient):
         zprava = json.loads(obsah)
         try:
             print(zprava['akce'])
-        except IndexError: #upravit
+        except IndexError: #nutno doladit podle toho co to hodi
             print("hodnota nenalezena v poli")
             
             
@@ -26,9 +26,9 @@ if __name__ == '__main__':
             #lze se pripojit
             ws = Klient(websocketHost) #pripoj se pres websockety
             ws.connect()
-            print("Ready !")
+            print("Pripojeno k WS, cekam na data")
         else:
-            print("nelze se pripojit")
+            print("dynbalabot neni pripojen k internetu")
             exit()
        
     except KeyboardInterrupt:

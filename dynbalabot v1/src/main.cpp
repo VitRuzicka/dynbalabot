@@ -7,7 +7,7 @@
 /////zde se aktivují příslušné funkční celky
 #define OTAupload  //musí být aktivována wifi při použití OTA
 #define WIFI
-//#define DIAG
+#define DIAG
 #define WS
 
 
@@ -24,12 +24,7 @@
 #endif
 
 
-#define IOPIN1 27
-#define IOPIN2 14
-#define IOPIN3 12
-#define SIG1 13
-#define SIG2 2
-#define VCCPIN 39
+
 
 const char* ssid = "Net";
 const char* password = "ruzicka123456789";
@@ -58,8 +53,7 @@ portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
 unsigned long predchoziCas = 0;        // promenne k debugovaci smycce
 const long interval = 100;  
-float VCC = 0.0;
-bool stavSIG1 = false;
+
 
 void setup() {
 
@@ -71,7 +65,7 @@ void setup() {
 #ifdef DIAG
   Serial.println("Bootuju");
 #endif
-#ifdef WIFI
+//#ifdef WIFI
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {  //pridat error ledku
@@ -84,18 +78,18 @@ void setup() {
   Serial.println("Pripraveno");
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
-#endif
-#ifdef OTAupload
+//#endif
+//#ifdef OTAupload
   configureOTA();
   ArduinoOTA.begin();
-#endif
-#ifdef WS
+//#endif
+//#ifdef WS
  if( !SPIFFS.begin()){
     Serial.println("Error mounting SPIFFS"); //pridat error LEDKU
     while(1);
   }
   setupWS();
-#endif
+//#endif
   nastav_krokace();
   
 //////////////////   preruseni pro PID  smycku    ///////////////////
@@ -111,21 +105,18 @@ void setup() {
     konfiguruj_gyro();
    
 
-   pinMode(SIG1, OUTPUT);  
-   pinMode(SIG2, OUTPUT);      
+         
 }
 
 void loop() {
   
 nactiGyro(); 
-
-#ifdef OTAupload
+//#ifdef OTAupload
 ArduinoOTA.handle();
-#endif
-
-#ifdef WS
+//#endif
+//#ifdef WS
 void WSloop();
-#endif
+//#endif
 
 if (PID) { //spousteno podle runTime
     PID = false;
@@ -152,7 +143,7 @@ if (PID) { //spousteno podle runTime
 
 
 if(prijimac.read(&channels[0], &failSafe, &lostFrame)){
-  // trigger kalibrace uhlu kolmého k zemi (aby robot stal rovne)
+  //kalibrace uhlu kolmého k zemi (aby robot stal rovne)
   if(channels[5] > 500){
     offsetUhel = ypr[2] * 180/M_PI;
   }
@@ -164,18 +155,15 @@ if(prijimac.read(&channels[0], &failSafe, &lostFrame)){
 
 
 
-unsigned long soucasnyCas = millis(); //nedůležitý kód který běží občas
+unsigned long soucasnyCas = millis();
   if (soucasnyCas- predchoziCas >= interval) {
     predchoziCas = soucasnyCas;
-    
+    //Serial.print("pulzy: ");
+    //Serial.println((1000/interval)*pulzy);
+    //pulzy = 0;
     Receive();
-    //cteni napeti baterie
-    VCC = analogRead(VCCPIN)*(33.0/4096)+1;
-    Serial.println(VCC);
-    digitalWrite(SIG1, stavSIG1);
-    digitalWrite(SIG2, !stavSIG1);
-    stavSIG1 = !stavSIG1;
-#ifdef DIAG 
+    //Serial.println(channels[1]);
+  /*  
 Serial.print("Roll: ");
 Serial.print(ypr[2] * 180/M_PI);
 Serial.print(" PID: ");
@@ -205,7 +193,7 @@ Serial.println(vystup);
   Serial.print("\t");
   Serial.println(ypr[2] * 180/M_PI);
  
- #endif
+ */
   
   }
 }
