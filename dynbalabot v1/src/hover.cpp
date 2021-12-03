@@ -92,7 +92,7 @@ void Receive()
             // Copy the new data
             memcpy(&Feedback, &NewFeedback, sizeof(SerialFeedback));
 
-            // Print data to built-in Serial
+            #ifdef DIAG
             Serial.print("1: ");   Serial.print(Feedback.cmd1);
             Serial.print(" 2: ");  Serial.print(Feedback.cmd2);
             Serial.print(" 3: ");  Serial.print(Feedback.speedR_meas);
@@ -100,6 +100,7 @@ void Receive()
             Serial.print(" 5: ");  Serial.print(Feedback.batVoltage);
             Serial.print(" 6: ");  Serial.print(Feedback.boardTemp);
             Serial.print(" 7: ");  Serial.println(Feedback.cmdLed);
+            #endif
         } else {
           Serial.println("Non-valid data skipped");
         }

@@ -37,8 +37,8 @@ const char* password = "ruzicka123456789";
 float Kp = 17;  // 14 pouze pro P.....18 pro spojení s D
 float Kd = 0.6; //                   -0.5 pro spojení s P
 float Ki = 0;  //nemá efekt na výsledek :(
-#define runTime  0.01 //5ms = 200hz PIDloop , upraveno na 100Hz
-float offsetUhel = -1.9; //upravit dle instalace čidla - ve st. - kalibrováno pomoci prearm tlačítka
+#define runTime  0.08   //puvodne 5ms = 200hz PIDloop , upraveno na 100Hz ; IMU bezi na 120Hz
+float offsetUhel = -1.9;   //upravit dle instalace čidla - ve st. - kalibrováno pomoci prearm tlačítka
 float cilovyUhel  = 0.0;     // tento úhel bude měněn ovladačem (setpoint)
 #define maxHodnota 500 // +- hodnota, která se saturuje po výstupu z PID -- upravit podle hoverboard vstupu
 #define DEADBAND 2   // určuje jak tenká je hranice (bod kdy systém zůstane v klidu) =====  Hystereze
@@ -55,12 +55,13 @@ SBUS prijimac(Serial1);
 hw_timer_t * timer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
-unsigned long predchoziCas = 0;        // promenne k debugovaci smycce
-const long interval = 100;  
+unsigned long predCasWeb = 0, predCasTel = 0;        // promenne k debugovaci smycce
+const long intervalWeb = 100;     //interval odesilani bezne telemetrie a zaroven vypis diagnostiky
+const long intervalTel = 20;      //interval odesilani rychle telemetrie
 float VCC = 0.0;
 
 void setup() {
-  zluta(1);
+  zelena(1);
   Wire.begin();  // připojíme se na I2C sběrnici kvůli MPU
   inicializujHB();
   Serial.begin(115200);
@@ -74,7 +75,7 @@ void setup() {
   WiFi.begin(ssid, password);
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {  //pridat error ledku
     Serial.println("Nelze se pripojit! Rebootuju...");
-    zluta(0);
+    zelena(0);
     delay(3000);
     //ESP.restart(); //esp se nebude restartovat bez wifi
     break; 
@@ -90,7 +91,8 @@ void setup() {
 #endif
 #ifdef WS
  if( !SPIFFS.begin()){
-    Serial.println("Error mounting SPIFFS"); //pridat error LEDKU
+    Serial.println("Nelze pripojit SPIFFS"); //pridat error LEDKU
+    zluta(1);
     while(1);
   }
   setupWS();
@@ -114,7 +116,7 @@ void setup() {
 }
 
 void loop() {
- WiFi.status() == WL_CONNECTED ? zluta(1) : zluta(0); //indikace pripojeni
+ WiFi.status() == WL_CONNECTED ? zelena(1) : zelena(0); //indikace pripojeni
 
 nactiGyro(); 
 #ifdef OTAupload
@@ -162,20 +164,19 @@ if(prijimac.read(&channels[0], &failSafe, &lostFrame)){
 
 
 unsigned long soucasnyCas = millis();
-  if (soucasnyCas- predchoziCas >= interval) {
-    predchoziCas = soucasnyCas;
-    Receive();
+  if (soucasnyCas- predCasWeb >= intervalWeb) {
+    predCasWeb = soucasnyCas;
+    Receive(); //zkusit presunout do nejrychlejsi casti kodu
     VCC = analogRead(VCCPIN)*(33.0/4096)+1;
     odesliTelemetrii();
+
  #ifdef DIAG  
-Serial.print("Roll: ");
-Serial.print(ypr[2] * 180/M_PI);
-Serial.print(" PID: ");
-Serial.println(vystup);
-
-
-
-  Serial.print("roll 0: ");
+  Serial.print("Uhel IMU: ");
+  Serial.print(ypr[3] * 180/M_PI);
+  Serial.print(" PID: ");
+  Serial.print(" INPUT: ");
+  Serial.println(vystup);
+  Serial.print(" roll 0: ");
   Serial.print(channels[0]);
   Serial.print("\t");
   Serial.print("pitch 1: ");
@@ -187,18 +188,18 @@ Serial.println(vystup);
   Serial.print("ARM: ");
   Serial.println(channels[4]);
   Serial.print("\t");
+  Serial.print("FS: ");
   Serial.print(failSafe);
-
-  
-  Serial.print("ypr\t");
-  Serial.print(ypr[0] * 180/M_PI);
   Serial.print("\t");
-  Serial.print(ypr[1] * 180/M_PI);
-  Serial.print("\t");
-  Serial.println(ypr[2] * 180/M_PI);
+  Serial.print("Napeti: ");
   Serial.println(VCC);
  
 #endif
   
+  }
+
+  if (soucasnyCas- predCasTel >= intervalTel) {
+    predCasTel = soucasnyCas;
+    //TODO: odesli rychlou telemetrii
   }
 }
