@@ -21,15 +21,19 @@ class Klient(WebSocketClient):
 sirka = 150 #urcuje kolik dat ma byt najednou zobrazeno
 x_vec = np.linspace(0,1,sirka+1)[0:-1] #funkce která generuje cisla pro osu X 
 y_vec = np.zeros(sirka)#np.random.randn(len(x_vec)) #vyplneni osy Y random hodnotami (pocet odpovida sirce) ,,, numpy.zeros vyplni jen nulami
-line1 = []           
+y_vec2 = np.zeros(sirka)
+line1 = []  
+line2 = []         
 print(len(x_vec))
 if __name__ == '__main__':
 
     while True:
         rand_val = 1#np.random.randn(1) #generuj jednu random hodnotu kolem nuly ale jako pole
         y_vec[-1] = rand_val  #zapsani do posledni hodnoty (-1) znamena posledni
-        line1 = live_plotter(x_vec,y_vec,line1) #vykresli
+        y_vec2[-1] = rand_val - 0.6
+        line1, line2 = live_plotter(x_vec,y_vec,y_vec2,line1, line2) #vykresli
         y_vec = np.append(y_vec[1:],0.0) #spojeni existujiciho grafu s novymi hodnotami
+        y_vec2 = np.append(y_vec2[1:], 0.0)
 
 
     """
