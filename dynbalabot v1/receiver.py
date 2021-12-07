@@ -15,28 +15,30 @@ class Klient(WebSocketClient):
     def received_message(self, obsah):
         #print(obsah)
         zprava = json.loads(obsah.data.decode("utf-8"))
-        if len(zprava) == 4:
-            print(zprava['nap'])        
+        if len(zprava) == 2:
+            #print(zprava['nap'])
+            vykresli_graf(zprava['err'], zprava['uhel'])
 
 sirka = 150 #urcuje kolik dat ma byt najednou zobrazeno
+global x_vec
+global y_vec
+global y_vec2
+global line1
+global line2
 x_vec = np.linspace(0,1,sirka+1)[0:-1] #funkce která generuje cisla pro osu X 
 y_vec = np.zeros(sirka)#np.random.randn(len(x_vec)) #vyplneni osy Y random hodnotami (pocet odpovida sirce) ,,, numpy.zeros vyplni jen nulami
 y_vec2 = np.zeros(sirka)
 line1 = []  
 line2 = []         
 print(len(x_vec))
+def vykesli_graf(hodnota1, hodnota2):
+    rand_val = 1#np.random.randn(1) #generuj jednu random hodnotu kolem nuly ale jako pole
+    y_vec[-1] = hodnota1  #zapsani do posledni hodnoty (-1) znamena posledni
+    y_vec2[-1] = hodnota2
+    line1, line2 = live_plotter(x_vec,y_vec,y_vec2,line1,line2) #vykresli
+    y_vec = np.append(y_vec[1:],0.0) #spojeni existujiciho grafu s novymi hodnotami
+    y_vec2 = np.append(y_vec2[1:], 0.0)
 if __name__ == '__main__':
-
-    while True:
-        rand_val = 1#np.random.randn(1) #generuj jednu random hodnotu kolem nuly ale jako pole
-        y_vec[-1] = rand_val  #zapsani do posledni hodnoty (-1) znamena posledni
-        y_vec2[-1] = rand_val - 0.6
-        line1, line2 = live_plotter(x_vec,y_vec,y_vec2,line1, line2) #vykresli
-        y_vec = np.append(y_vec[1:],0.0) #spojeni existujiciho grafu s novymi hodnotami
-        y_vec2 = np.append(y_vec2[1:], 0.0)
-
-
-    """
     try:
         response = os.system("ping -c 1 -w 150 " + host) #pokud se lze pingnout na zarizeni pokraacuj dal 
         if response == 0:
@@ -53,4 +55,4 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         ws.close()
         exit()
-        """
+        

@@ -201,5 +201,6 @@ unsigned long soucasnyCas = millis();
   if (soucasnyCas- predCasTel >= intervalTel) {
     predCasTel = soucasnyCas;
     //TODO: odesli rychlou telemetrii
+    odesliRychlouTelemetrii(soucasnyUhel, error);
   }
 }

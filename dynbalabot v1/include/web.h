@@ -11,5 +11,6 @@ extern float Kp;
 extern float Kd;
 extern float Ki;
 void odesliTelemetrii();
+void odesliRychlouTelemetrii(float, float);
 void setupWS();
 void WSloop();

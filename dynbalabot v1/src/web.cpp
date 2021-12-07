@@ -42,7 +42,21 @@ void odesliTelemetrii(){ //zde ještě přijdou data z PID atd
     //Serial.println(data);
   }
 }
+void odesliRychlouTelemetrii(float a, float b){ //zde ještě přijdou data z PID atd
+  if(telemetrie){
+    const uint8_t size = JSON_OBJECT_SIZE(4); //nutno navýšit podle počtu prvků
+    StaticJsonDocument<size> json; //nutno definovat velikost, ta se zmeni podle obsahu
 
+    json["uhel"] = String(a);
+    json["err"] =  String(b);
+    char data[150]; 
+    size_t len = serializeJson(json, data); //prevedeni dat na json (ulozen v data) a jeho velikost len
+
+    ws.textAll(data, len); // odeslani dat vsem klientum
+    //Serial.print("[ESP]odesilam telemetrii klientum: ");
+    //Serial.println(data);
+  }
+}
 void zpracujZpravu(void *arg, uint8_t *data, size_t len) {
   AwsFrameInfo *info = (AwsFrameInfo*)arg;
   if (info->final && info->index == 0 && info->len == len && info->opcode == WS_TEXT) {
