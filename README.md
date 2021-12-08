@@ -14,22 +14,28 @@
 
 ## features of pcbv1
 
-- pins for Stepper sriver boards
+- pins for Stepper drivers
 - pins for endstops
 - free IO
-- premade switching circuit to replace hoverboard's mainboard button
+- switching circuit to replace hoverboard's mainboard button
 - CAN
 - mutliple voltage levels indicated by leds
 just a proof of concept really...
 
 ## features of pcbv2
--same as v1 + error fixes, smaller footprint, and I used brain while designing it - this time.... 
+
+-same as v1 + error fixes, smaller footprint, and I used brain while designing it - this time.... though the ADC pin for measuring input voltage cannot be used because it is being used by WIFI :(
+- more LEDs and thats what matters
 
 
-so far, the whole project has about 650 lines of code, and it still doesn't work :D
-EDIT: as of 29.11.21 we are at about 1100 and it works :D
+## features of dynbalaStepper
 
-
+My goal was to create a PCB, that drives stepper motors to act like a spring that returns to default position after some time. The purpose of this is that stepper motors will be located in the gearboxes, which are backdrivable hence driving robot off a step will create huge shock wave from wheels to motors and to dampen it, the custom closed loop stepper control is utilized. I could have used a premade board from BTT but:
+- it is expensive $$$$
+- it does not utilise CAN bus, (older versions do, but they are not sold anymore)
+- they dont have endstop input, which will be used in gearboxes
+- hey, its flex creating my own PCBs :D
+- 
 **Table of Contents**
 
 [TOCM]
