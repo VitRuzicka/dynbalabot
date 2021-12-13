@@ -1,8 +1,68 @@
 #include "canbus.h"
+#include <CAN.h>
+
+
+ void CANpaket(int packetSize){
+  Serial.print("Received ");
+
+  if (CAN.packetExtended()) {
+    Serial.print("extended ");
+  }
+
+  if (CAN.packetRtr()) {
+    // Remote transmission request, packet contains no data
+    Serial.print("RTR ");
+  }
+
+  Serial.print("packet with id 0x");
+  Serial.print(CAN.packetId(), HEX);
+
+  if (CAN.packetRtr()) {
+    Serial.print(" and requested length ");
+    Serial.println(CAN.packetDlc());
+  } else {
+    Serial.print(" and length ");
+    Serial.println(packetSize);
+
+    // only print packet data for non-RTR packets
+    while (CAN.available()) {
+      Serial.print((char)CAN.read());
+    }
+    Serial.println();
+  }
+
+  Serial.println();
+ }
+
+ void CANkonfigurace(){
+   if (!CAN.begin(500E3)) {
+    Serial.println("Starting CAN failed!");
+    while (1);
+  }
+  CAN.onReceive(CANpaket);
+ }
+
+ void CANping(){  
+   Serial.print("Sending packet ... ");
+
+  CAN.beginPacket(0x12);
+  CAN.write('h');
+  CAN.write('e');
+  CAN.write('l');
+  CAN.write('l');
+  CAN.write('o');
+  CAN.endPacket();
+
+  Serial.println("done");
+    
+ }
+
+
+ /*
+ #include "canbus.h"
 #include <ESP32CAN.h>
 #include <CAN_config.h>
 
-/* the variable name CAN_cfg is fixed, do not change */
 CAN_device_t CAN_cfg;
 
 
@@ -10,7 +70,6 @@ CAN_device_t CAN_cfg;
  CAN_cfg.speed=CAN_SPEED_1000KBPS;
     CAN_cfg.tx_pin_id = GPIO_NUM_5;
     CAN_cfg.rx_pin_id = GPIO_NUM_4;
-    /* create a queue for CAN receiving */
     CAN_cfg.rx_queue = xQueueCreate(10,sizeof(CAN_frame_t));
     //initialize CAN Module
     ESP32Can.CANInit();
@@ -55,4 +114,4 @@ void CANloop(){
       
       ESP32Can.CANWriteFrame(&rx_frame);
     
- }
+ }*/

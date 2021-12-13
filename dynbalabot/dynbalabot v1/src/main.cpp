@@ -132,9 +132,9 @@ ArduinoOTA.handle();
 #ifdef WS
 void WSloop();
 #endif
-#ifdef CAN
+/*#ifdef CAN
   CANloop();
-  #endif
+  #endif*/
 if (PID) { //spousteno podle runTime
     PID = false;
     error = (soucasnyUhel - offsetUhel) - cilovyUhel ; //radek 92 v mpu_magic.cpp
