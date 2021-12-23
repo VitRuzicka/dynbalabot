@@ -2,6 +2,7 @@
 - an open source dual legged balancing robot
 - based on Ascento and SK8O
 - my final year's project
+- the parent of smaller project dynbalaStepper for driving steppers in gearboxes: https://github.com/VitRuzicka/dynbalaStepper
 
 ## platform
 
