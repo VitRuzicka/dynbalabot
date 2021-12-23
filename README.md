@@ -2,7 +2,6 @@
 - an open source dual legged balancing robot
 - based on Ascento and SK8O
 - my final year's project
-- the parent of smaller project dynbalaStepper for driving steppers in gearboxes: https://github.com/VitRuzicka/dynbalaStepper
 
 ## platform
 
@@ -30,6 +29,7 @@ just a proof of concept really...
 
 
 ## features of dynbalaStepper
+here: https://github.com/VitRuzicka/dynbalaStepper
 
 My goal was to create a PCB, that drives stepper motors to act like a spring that returns to default position after some time. The purpose of this is that stepper motors will be located in the gearboxes, which are backdrivable hence driving robot off a step will create huge shock wave from wheels to motors and to dampen it, the custom closed loop stepper control is utilized. I could have used a premade board from BTT but:
 - it is expensive $$$$
