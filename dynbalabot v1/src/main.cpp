@@ -9,6 +9,7 @@
 #define WIFI
 //#define DIAG
 #define WS
+#define CAN
 
 
 #include <Arduino.h>
@@ -19,6 +20,7 @@
 #include "prevodovka.h"
 #include "web.h"
 #include "led.h"
+#include "canbus.h"
 
 #ifdef OTAupload
 #include "ota_sluzba.h"
@@ -55,13 +57,17 @@ SBUS prijimac(Serial1);
 hw_timer_t * timer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
 
-unsigned long predCasWeb = 0, predCasTel = 0;        // promenne k debugovaci smycce
-const long intervalWeb = 100;     //interval odesilani bezne telemetrie a zaroven vypis diagnostiky
-const long intervalTel = 20;      //interval odesilani rychle telemetrie
+unsigned long predCasWeb = 0, predCasTel = 0, looptime=0;        // promenne k debugovaci smycce
+const long intervalWeb = 500;     //interval odesilani bezne telemetrie a zaroven vypis diagnostiky
+const long intervalTel = 40;      //interval odesilani rychle telemetrie
 float VCC = 0.0;
 
 void setup() {
   zelena(1);
+  konfigurujAdresovatelne();
+  heartbeat();
+
+
   Wire.begin();  // připojíme se na I2C sběrnici kvůli MPU
   inicializujHB();
   Serial.begin(115200);
@@ -98,7 +104,9 @@ void setup() {
   setupWS();
 #endif
   nastav_krokace();
-  
+    #ifdef CAN
+  CANkonfigurace();
+  #endif
 //////////////////   preruseni pro PID  smycku    ///////////////////
 
 
@@ -117,15 +125,16 @@ void setup() {
 
 void loop() {
  WiFi.status() == WL_CONNECTED ? zelena(1) : zelena(0); //indikace pripojeni
-
-nactiGyro(); 
+ nactiGyro(); 
 #ifdef OTAupload
 ArduinoOTA.handle();
 #endif
 #ifdef WS
 void WSloop();
 #endif
-
+/*#ifdef CAN
+  CANloop();
+  #endif*/
 if (PID) { //spousteno podle runTime
     PID = false;
     error = (soucasnyUhel - offsetUhel) - cilovyUhel ; //radek 92 v mpu_magic.cpp
@@ -164,22 +173,36 @@ if(prijimac.read(&channels[0], &failSafe, &lostFrame)){
 
 
 unsigned long soucasnyCas = millis();
+
+//Serial.print("looptime: ");
+//Serial.println(soucasnyCas - looptime);
+  looptime = soucasnyCas;
+  
   if (soucasnyCas- predCasWeb >= intervalWeb) {
     predCasWeb = soucasnyCas;
     Receive(); //zkusit presunout do nejrychlejsi casti kodu
     VCC = analogRead(VCCPIN)*(33.0/4096)+1;
     odesliTelemetrii();
+    heartbeat();
+
+
+#ifdef CAN
+  
+   CANping();  //pouze testovaci pro odesilaci desku
+#endif
+
+
 
  #ifdef DIAG  
   Serial.print("Uhel IMU: ");
   Serial.print(ypr[3] * 180/M_PI);
   Serial.print(" PID: ");
-  Serial.print(" INPUT: ");
+  Serial.print(" OUTPUT: ");
   Serial.println(vystup);
-  Serial.print(" roll 0: ");
+  Serial.print(" roll: ");
   Serial.print(channels[0]);
   Serial.print("\t");
-  Serial.print("pitch 1: ");
+  Serial.print("pitch: ");
   Serial.print(channels[1]);
   Serial.print("\t");
   Serial.print("throttle: ");
@@ -200,7 +223,7 @@ unsigned long soucasnyCas = millis();
 
   if (soucasnyCas- predCasTel >= intervalTel) {
     predCasTel = soucasnyCas;
-    //TODO: odesli rychlou telemetrii
     odesliRychlouTelemetrii(soucasnyUhel, error);
   }
+ 
 }

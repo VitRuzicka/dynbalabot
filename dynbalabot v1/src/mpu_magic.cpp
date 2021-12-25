@@ -49,9 +49,9 @@ void nactiGyro(){
 if (!dmpReady) return;
 
 // zde provádíme náš kód, cyklus ověřuje, zda nemá DMP připravena nějaká data
-while (!mpuInterrupt && fifoCount < packetSize) {
+//while (!mpuInterrupt && fifoCount < packetSize) {
     //
-}
+//}
 
 // resetujeme proměnnou informující o přerušení vyvolané z DMP a získáme INT_STATUS byte
 mpuInterrupt = false;
@@ -60,7 +60,7 @@ mpuIntStatus = mpu.getIntStatus();
 // získáme velikost FIFO zásobníku
 fifoCount = mpu.getFIFOCount();
 
-// zjistíme, zda nedošlo k přetečené zásobníku
+// zjistíme, zda nedošlo k přetečení zásobníku
 // pokud k němu dojde, je třeba optimalizovat kód v cyklu výše,
 // případně přerušit provádění mezi delšími výpočty, je-li to třeba
 if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
@@ -70,7 +70,7 @@ if ((mpuIntStatus & 0x10) || fifoCount == 1024) {
 
 // pokud je vše v pořádku, zpracujeme data z DMP
 } else if (mpuIntStatus & 0x02) {
-    // čekání na správnou délku dat
+    // čekání na správnou délku dat, mělo by čekat velmi krátce
     while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
 
     // přečteme paket ze zásobníku
@@ -97,13 +97,14 @@ void konfiguruj_gyro(){
     // inicializujeme MPU-6050
 Serial.println(F("Initializing I2C devices..."));
 mpu.initialize();
-
+#ifdef DIAG
 // ověříme připojení k MPU-6050
 Serial.println(F("Testing device connections..."));
 Serial.println(mpu.testConnection() ? F("MPU6050 connection successful") : F("MPU6050 connection failed"));
 
 // incializujeme DMP
 Serial.println(F("Initializing DMP..."));
+#endif
 devStatus = mpu.dmpInitialize();
 
 // ujist// ujistíme se, že funguje

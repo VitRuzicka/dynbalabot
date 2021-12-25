@@ -7,3 +7,5 @@ extern bool stav1;
 extern bool stav2;
 void zelena(uint8_t);
 void zluta(uint8_t);
+void konfigurujAdresovatelne();
+void heartbeat();

@@ -1,7 +1,25 @@
 #include "led.h"
+#include <FastLED.h>
+
+#define LED_PIN     12
+#define NUM_LEDS    1
+#define BRIGHTNESS  50
+#define LED_TYPE    WS2812
+#define COLOR_ORDER GRB
+CRGB leds[NUM_LEDS];
+
+
 bool stav1 = false;
 bool stav2 = false;
 
+void konfigurujAdresovatelne(){
+    FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS).setCorrection( TypicalLEDStrip );
+    FastLED.setBrightness(  BRIGHTNESS );
+}
+void heartbeat(){
+    leds[0] = CHSV(random8(),255,255);
+    FastLED.show();
+}
 void zelena(uint8_t stav){ //tri stavy 0,1 a 2 (toggle)
 pinMode(SIG1, OUTPUT);
 if(stav == 0){

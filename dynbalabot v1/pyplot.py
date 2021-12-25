@@ -7,11 +7,12 @@ plt.style.use('ggplot')
 def live_plotter(x_vec,y1_data,y2_data,line1, line2, pause_time=0.01):
     if line1==[]: #prvni beh programu
         plt.ion() #toto umozni plynule plottovani dat
-        fig = plt.figure(figsize=(13,6))
+        fig = plt.figure(figsize=(18,8))
         ax = fig.add_subplot(111)
         # promenna ktera obsahuje caru, kterou muzeme nasledne vratit na konci fce
-        line1, = ax.plot(x_vec,y1_data,color="r",alpha=0.8)
-        line2, = ax.plot(x_vec,y2_data,color="g",alpha=0.8)        
+        line1, = ax.plot(x_vec,y1_data,color="r",alpha=0.8, label='error')
+        line2, = ax.plot(x_vec,y2_data,color="g",alpha=0.8, label='soucasny uhel')   
+        legenda = ax.legend()     
         #update plot label/title
         plt.ylabel('Vychylka')
         plt.title('Dynbalabot')
@@ -23,6 +24,9 @@ def live_plotter(x_vec,y1_data,y2_data,line1, line2, pause_time=0.01):
     # nastaveni meritka v pripade ze je hodnota z grafu prekroci
     if np.min(y1_data)<=line1.axes.get_ylim()[0] or np.max(y1_data)>=line1.axes.get_ylim()[1]:
         plt.ylim([np.min(y1_data)-np.std(y1_data),np.max(y1_data)+np.std(y1_data)])
+    elif np.min(y2_data)<=line2.axes.get_ylim()[0] or np.max(y2_data)>=line2.axes.get_ylim()[1]:
+        plt.ylim([np.min(y2_data)-np.std(y2_data),np.max(y2_data)+np.std(y2_data)])
+    
     # zastaveni grafu aby se data mohla zpracovat
     plt.pause(pause_time)
     
