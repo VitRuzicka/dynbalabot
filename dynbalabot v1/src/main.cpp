@@ -1,16 +1,6 @@
-/* TODO:
--vyčistit a zjednodušit kód :DDD kdo to sem napsal
--použití pouze pitch a roll
--zprovoznit ovladani a posouvani setpointu (řízení)
-
+/*
+radek 122 v PID casti je omezeni pro predchozi error ktery myslim omezoval vykonovou cast algoritmu, je treba to OTESTOVAT
 */
-/////zde se aktivují příslušné funkční celky
-#define OTAupload  //musí být aktivována wifi při použití OTA
-#define WIFI
-//#define DIAG
-#define WS
-#define CAN
-
 
 #include <Arduino.h>
 #include <math.h>
@@ -21,16 +11,13 @@
 #include "web.h"
 #include "led.h"
 #include "canbus.h"
+#include "config.h"
 
 #ifdef OTAupload
 #include "ota_sluzba.h"
 #endif
 
 
-#define IOPIN1 27
-#define IOPIN2 14
-#define IOPIN3 12
-#define VCCPIN 39
 
 const char* ssid = "Net";
 const char* password = "ruzicka123456789";
@@ -39,12 +26,8 @@ const char* password = "ruzicka123456789";
 float Kp = 17;  // 14 pouze pro P.....18 pro spojení s D
 float Kd = 0.6; //                   -0.5 pro spojení s P
 float Ki = 0;  //nemá efekt na výsledek :(
-#define runTime  0.08   //puvodne 5ms = 200hz PIDloop , upraveno na 100Hz ; IMU bezi na 120Hz
 float offsetUhel = -1.9;   //upravit dle instalace čidla - ve st. - kalibrováno pomoci prearm tlačítka
 float cilovyUhel  = 0.0;     // tento úhel bude měněn ovladačem (setpoint)
-#define maxHodnota 500 // +- hodnota, která se saturuje po výstupu z PID -- upravit podle hoverboard vstupu
-#define DEADBAND 2   // určuje jak tenká je hranice (bod kdy systém zůstane v klidu) =====  Hystereze
-#define deadMot 90  //kompenzace deadbandu motorů
 volatile bool PID;
 volatile int vystup;
 volatile float soucasnyUhel, predUhel=0, error, predErr=0, soucetErr=0;
@@ -139,7 +122,7 @@ if (PID) { //spousteno podle runTime
     PID = false;
     error = (soucasnyUhel - offsetUhel) - cilovyUhel ; //radek 92 v mpu_magic.cpp
     soucetErr = soucetErr + error;  
-    soucetErr = constrain(soucetErr, -maxHodnota, maxHodnota);
+    //soucetErr = constrain(soucetErr, -maxHodnota, maxHodnota);  //ZDE UPRAVENO, zdalo se mi ze to zde neni potreba
     //calculate output from P, I and D values
     vystup = Kp*(error) + Ki*(soucetErr)*runTime + Kd*(soucasnyUhel-predUhel)/runTime;
     predUhel = soucasnyUhel;

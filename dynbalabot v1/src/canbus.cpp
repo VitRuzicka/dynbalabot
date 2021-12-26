@@ -45,7 +45,7 @@
  void CANping(){  
    Serial.print("Sending packet ... ");
 
-  CAN.beginPacket(0x12);
+  CAN.beginPacket(0x12); //id je 18 v DEC
   CAN.write('h');
   CAN.write('e');
   CAN.write('l');
