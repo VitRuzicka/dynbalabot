@@ -33,6 +33,7 @@ TODO:
     pid = document.getElementById("pid");
     failsafe = document.getElementById("failsafe");
     mpu = document.getElementById("mpu");
+    looptime = document.getElementById("looptime");
     
    
     
@@ -76,21 +77,22 @@ function onClose(evt) {
 
 function onMessage(evt) {
 
-    console.log("Received: " + evt.data);
+    console.log("Received: " + evt.data); //evt.data
     
     let data = JSON.parse(evt.data); //parsování dat z jsonu z esp
     //console.log("pocet prvku: " + Object.keys(data).length); //na zakladě tohoto se rozhodnout jestli přišly PID udaje, nebo to ignorovat
-    if(Object.keys(data).length == 3){
-        parametrP.value = Number(data.kP);
+    if(Object.keys(data).length == 3 && data.hasOwnProperty("kP") ) { //kontorluje pripade ze jednotlivy klic nebude v jsonu (prijde rychla telemetrie ktera neobsahuje PID hodnoty)
+        parametrP.value = Number(data.kP); 
         parametrI.value = Number(data.kI);
-        parametrD.value = Number(data.kD);
+        parametrD.value = Number(data.kD) ;
         
     }
-    else if(Object.keys(data).length == 4){
+    else if(Object.keys(data).length == 5){
         napeti.innerHTML = Number(data.nap).toFixed(1) + "V";
         pid.innerHTML =           data.pid;
         failsafe.innerHTML = data.fs;
         mpu.innerHTML  =     data.mpuOK;
+        looptime.innerHTML = Number(data.lt) + "us";
     }
 }
 
@@ -168,6 +170,7 @@ table, tr, td{
             <label>PID: </label> <label id="pid">NEBĚŽÍ</label><br>
             <label>Failsafe </label> <label id="failsafe">OK</label><br>
             <label>IMU: </label> <label id="mpu">OK</label><br>
+            <label>Looptime:</label> <label id="looptime">0</label><br> 
             <input type="button" id="submit1" value="Zapnout telemetrii" onclick="odesliRequest('tel')">
 
         </td>

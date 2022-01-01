@@ -7,16 +7,15 @@ bool telemetrie = false;
 
 AsyncWebServer server(80);
 AsyncWebSocket ws("/ws");
-char msg_buf[10];
-int led_state = 0;
+//    https://arduinojson.org/v5/assistant/
 
 void odesliHodnoty(){
     const uint8_t size = JSON_OBJECT_SIZE(4); //nutno navýšit podle počtu prvků
     StaticJsonDocument<size> json; //nutno definovat velikost, ta se zmeni podle obsahu
 
-    json["kP"] = String(Kp);  //nacteni hodnot do jsonu
-    json["kI"] = String(Ki);
-    json["kD"] = String(Kd);
+    json["kP"] = Kp;  //nacteni hodnot do jsonu
+    json["kI"] = Ki;
+    json["kD"] = Kd;
    
     char data[200]; //snad by slo zmensit = vypsat velikost dat odeslanych pres json
     size_t len = serializeJson(json, data); //prevedeni dat na json (ulozen v data) a jeho velikost len
@@ -25,36 +24,34 @@ void odesliHodnoty(){
     Serial.print("[ESP]odesilam data klientum: ");
     Serial.println(data);
 }
-void odesliTelemetrii(){ //zde ještě přijdou data z PID atd
+void odesliTelemetrii(int looptime){ //zde ještě přijdou data z PID atd
   if(telemetrie){
-    const uint8_t size = JSON_OBJECT_SIZE(5); //nutno navýšit podle počtu prvků
-    StaticJsonDocument<size> json; //nutno definovat velikost, ta se zmeni podle obsahu
+    const uint8_t size = JSON_OBJECT_SIZE(6); //nutno navýšit podle počtu prvků
+    StaticJsonDocument<size> json; 
 
     json["nap"] = String(VCC);
     json["pid"] =  channels[4] < 500 ? "BĚŽÍ" : "NEBĚŽÍ";
     json["fs"] =  failSafe ? "OK" : "NOT OK";
     json["mpuOK"] =  devStatus == 0 ? "OK" : "NOT OK";
-    char data[200]; 
-    size_t len = serializeJson(json, data); //prevedeni dat na json (ulozen v data) a jeho velikost len
-
-    ws.textAll(data, len); // odeslani dat vsem klientum
-    //Serial.print("[ESP]odesilam telemetrii klientum: ");
-    //Serial.println(data);
-  }
-}
-void odesliRychlouTelemetrii(float a, float b){ //zde ještě přijdou data z PID atd
-  if(telemetrie){
-    const uint8_t size = JSON_OBJECT_SIZE(4); //nutno navýšit podle počtu prvků
-    StaticJsonDocument<size> json; //nutno definovat velikost, ta se zmeni podle obsahu
-
-    json["uhel"] = String(a);
-    json["err"] =  String(b);
+    json["lt"] = looptime;
     char data[150]; 
     size_t len = serializeJson(json, data); //prevedeni dat na json (ulozen v data) a jeho velikost len
 
     ws.textAll(data, len); // odeslani dat vsem klientum
-    //Serial.print("[ESP]odesilam telemetrii klientum: ");
-    //Serial.println(data);
+  }
+}
+void odesliRychlouTelemetrii(float a, float b, int c){ //zde ještě přijdou data z PID atd
+  if(telemetrie){
+    const uint8_t size = JSON_OBJECT_SIZE(4); //nutno navýšit podle počtu prvků
+    StaticJsonDocument<size> json; 
+
+    json["uhel"] = a;
+    json["err"] =  b;
+    json["out"] = c;
+    char data[150]; 
+    size_t len = serializeJson(json, data); //prevedeni dat na json (ulozen v data) a jeho velikost len
+
+    ws.textAll(data, len); // odeslani dat vsem klientum
   }
 }
 void zpracujZpravu(void *arg, uint8_t *data, size_t len) {

@@ -39,19 +39,15 @@ SBUS prijimac(Serial1);
 
 hw_timer_t * timer = NULL;
 portMUX_TYPE timerMux = portMUX_INITIALIZER_UNLOCKED;
-
-unsigned long predCasWeb = 0, predCasTel = 0, looptime=0;        // promenne k debugovaci smycce
-const long intervalWeb = 500;     //interval odesilani bezne telemetrie a zaroven vypis diagnostiky
-const long intervalTel = 40;      //interval odesilani rychle telemetrie
+unsigned long predCasWeb = 0, predCasTel = 0, lt=0;        // promenne k debugovaci smycce
+unsigned int looptime = 0;
+const long intervalWeb = 200;     //interval odesilani bezne telemetrie a zaroven vypis diagnostiky
+const long intervalTel = 20;      //interval odesilani rychle telemetrie
 float VCC = 0.0;
 
 void setup() {
-  zelena(1);
   konfigurujAdresovatelne();
   heartbeat();
-
-
-  Wire.begin();  // připojíme se na I2C sběrnici kvůli MPU
   inicializujHB();
   Serial.begin(115200);
   prijimac.begin(18,19, true);;
@@ -87,8 +83,8 @@ void setup() {
   setupWS();
 #endif
   nastav_krokace();
-    #ifdef CAN
-  CANkonfigurace();
+  #if  defined(CAN) || defined(CANDEBUG) 
+    CANkonfigurace();
   #endif
 //////////////////   preruseni pro PID  smycku    ///////////////////
 
@@ -100,25 +96,27 @@ void setup() {
     timerAlarmWrite(timer, runTime*10000, true); //50 tiků = 5ms viz define     
     timerAlarmEnable(timer);          //kazdych 5ms se promenna PID zmeni na true
 //////////////////////////////////////////////////////////////////////
-    konfiguruj_gyro();
-   
 
+
+  konfiguruj_gyro();
+  
          
 }
 
 void loop() {
- WiFi.status() == WL_CONNECTED ? zelena(1) : zelena(0); //indikace pripojeni
- nactiGyro(); 
+WiFi.status() == WL_CONNECTED ? zelena(1) : zelena(0); //indikace pripojeni
+nactiGyro(); 
 #ifdef OTAupload
 ArduinoOTA.handle();
 #endif
 #ifdef WS
 void WSloop();
 #endif
-/*#ifdef CAN
+#ifdef CAN
   CANloop();
-  #endif*/
+#endif
 if (PID) { //spousteno podle runTime
+    //pridat dynamicke odcitani casu od posledniho behu
     PID = false;
     error = (soucasnyUhel - offsetUhel) - cilovyUhel ; //radek 92 v mpu_magic.cpp
     soucetErr = soucetErr + error;  
@@ -136,7 +134,7 @@ if (PID) { //spousteno podle runTime
       //Serial.print(clip(channels[2]-230, 300, -300));Serial.println("");
       
       Send(0, constrain(kompenzaceDEADBAND(vystup, DEADBAND, deadMot), -maxHodnota, maxHodnota)); //tento prikaz posila vystup PID na motory
-      //cilovyUhel = map(channels[1], 200, 1800, 5, -5); //rizeni uhlu z ovladace...nutno zmenit za lateralni pohyb
+      //cilovyUhel = map(channels[1], 200, 1800, 5, -5); //rizeni uhlu z ovladace...nutno zmenit za lateralni kontroler
 
     }
     }
@@ -145,7 +143,7 @@ if (PID) { //spousteno podle runTime
 if(prijimac.read(&channels[0], &failSafe, &lostFrame)){
   //kalibrace uhlu kolmého k zemi (aby robot stal rovne)
   if(channels[5] > 500){
-    offsetUhel = ypr[2] * 180/M_PI;
+    offsetUhel = soucasnyUhel;
   }
 
   
@@ -156,21 +154,21 @@ if(prijimac.read(&channels[0], &failSafe, &lostFrame)){
 
 
 unsigned long soucasnyCas = millis();
-
-//Serial.print("looptime: ");
-//Serial.println(soucasnyCas - looptime);
-  looptime = soucasnyCas;
+unsigned long CasLoopu = micros();
+looptime = CasLoopu - lt;
+lt = CasLoopu;
   
   if (soucasnyCas- predCasWeb >= intervalWeb) {
     predCasWeb = soucasnyCas;
     Receive(); //zkusit presunout do nejrychlejsi casti kodu
     VCC = analogRead(VCCPIN)*(33.0/4096)+1;
-    odesliTelemetrii();
+    odesliTelemetrii(looptime);
     heartbeat();
+    Serial.println(looptime);
 
-
-#ifdef CAN
   
+
+#ifdef CANDEBUG
    CANping();  //pouze testovaci pro odesilaci desku
 #endif
 
@@ -206,7 +204,7 @@ unsigned long soucasnyCas = millis();
 
   if (soucasnyCas- predCasTel >= intervalTel) {
     predCasTel = soucasnyCas;
-    odesliRychlouTelemetrii(soucasnyUhel, error);
+    odesliRychlouTelemetrii(soucasnyUhel, error, vystup);
   }
  
 }
