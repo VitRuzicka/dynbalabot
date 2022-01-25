@@ -3,6 +3,7 @@
 /////zde se aktivují příslušné funkční celky
 #define OTAupload  //musí být aktivována wifi při použití OTA
 #define WIFI
+#define WIFIAP //kdyz se nelze pripojit k hostpotu, esp aktivuje vlastni hotspot - deje se pouze pri startu
 //#define DIAG
 #define WS
 //#define CAN

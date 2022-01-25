@@ -24,9 +24,9 @@ void odesliHodnoty(){
     Serial.print("[ESP]odesilam data klientum: ");
     Serial.println(data);
 }
-void odesliTelemetrii(int looptime){ //zde ještě přijdou data z PID atd
+void odesliTelemetrii(int looptime){ 
   if(telemetrie){
-    const uint8_t size = JSON_OBJECT_SIZE(6); //nutno navýšit podle počtu prvků
+    const uint8_t size = JSON_OBJECT_SIZE(6); //odpovídá počtu prvků
     StaticJsonDocument<size> json; 
 
     json["nap"] = String(VCC);
@@ -35,12 +35,12 @@ void odesliTelemetrii(int looptime){ //zde ještě přijdou data z PID atd
     json["mpuOK"] =  devStatus == 0 ? "OK" : "NOT OK";
     json["lt"] = looptime;
     char data[150]; 
-    size_t len = serializeJson(json, data); //prevedeni dat na json (ulozen v data) a jeho velikost len
+    size_t len = serializeJson(json, data); //prevedeni dat na JSON
 
     ws.textAll(data, len); // odeslani dat vsem klientum
   }
 }
-void odesliRychlouTelemetrii(float a, float b, int c){ //zde ještě přijdou data z PID atd
+void odesliRychlouTelemetrii(float a, float b, int c){ 
   if(telemetrie){
     const uint8_t size = JSON_OBJECT_SIZE(4); //nutno navýšit podle počtu prvků
     StaticJsonDocument<size> json; 

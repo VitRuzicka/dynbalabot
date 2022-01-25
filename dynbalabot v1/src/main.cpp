@@ -21,6 +21,12 @@ radek 122 v PID casti je omezeni pro predchozi error ktery myslim omezoval vykon
 
 const char* ssid = "Net";
 const char* password = "ruzicka123456789";
+const char* ssid_ap = "Dynbalabot";
+// softAP adresa
+IPAddress local_IP(192,168,0,123);
+IPAddress gateway(192,168,0,123);
+IPAddress subnet(255,255,255,0);
+
 
 
 float Kp = 17;  // 14 pouze pro P.....18 pro spojení s D
@@ -55,14 +61,24 @@ void setup() {
 #ifdef DIAG
   Serial.println("Bootuju");
 #endif
+
 #ifdef WIFI
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
+
+
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {  //pridat error ledku
     Serial.println("Nelze se pripojit! Rebootuju...");
     zelena(0);
     delay(3000);
-    //ESP.restart(); //esp se nebude restartovat bez wifi
+    
+#ifdef WIFIAP
+WiFi.softAPConfig(local_IP, gateway, subnet);
+WiFi.softAP(ssid_ap);
+#endif
+
+
+
     break; 
 
   }
@@ -70,6 +86,8 @@ void setup() {
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 #endif
+
+
 #ifdef OTAupload
   configureOTA();
   ArduinoOTA.begin();
