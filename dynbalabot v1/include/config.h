@@ -15,6 +15,8 @@
 #define IOPIN3 12 //pouzito pro adresovane led diody
 #define VCCPIN 39
 #define INTPIN 23
+#define ENDPIN1 34
+#define ENDPIN2 35
 //PID:
 #define runTime  0.01   //puvodne 5ms = 200hz PIDloop; IMU bezi na 120Hz
 #define maxHodnota 500 // +- hodnota, která se saturuje po výstupu z PID -- upravit podle hoverboard vstupu

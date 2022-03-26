@@ -122,6 +122,7 @@ WiFi.softAP(ssid_ap);
 }
 
 void loop() {
+  runKrokace();
 WiFi.status() == WL_CONNECTED ? zelena(1) : zelena(0); //indikace pripojeni
 nactiGyro(); 
 #ifdef OTAupload
@@ -136,9 +137,9 @@ void WSloop();
 if (PID) { //spousteno podle runTime
     //pridat dynamicke odcitani casu od posledniho behu
     PID = false;
-    error = (soucasnyUhel - offsetUhel) - cilovyUhel ; //radek 92 v mpu_magic.cpp
+    error = (soucasnyUhel - offsetUhel) - cilovyUhel ;
     soucetErr = soucetErr + error;  
-    //soucetErr = constrain(soucetErr, -maxHodnota, maxHodnota);  //ZDE UPRAVENO, zdalo se mi ze to zde neni potreba
+    //soucetErr = constrain(soucetErr, -maxHodnota, maxHodnota);  
     //calculate output from P, I and D values
     vystup = Kp*(error) + Ki*(soucetErr)*runTime + Kd*(soucasnyUhel-predUhel)/runTime;
     predUhel = soucasnyUhel;
@@ -182,7 +183,8 @@ lt = CasLoopu;
     VCC = analogRead(VCCPIN)*(33.0/4096)+1;
     odesliTelemetrii(looptime);
     heartbeat();
-    Serial.println(looptime);
+    //Serial.println(looptime);
+    //Serial.print(digitalRead(ENDPIN1)); Serial.print(" "); Serial.println(digitalRead(ENDPIN2));
 
   
 
