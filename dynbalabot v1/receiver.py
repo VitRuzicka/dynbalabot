@@ -4,7 +4,7 @@ from ws4py.client.threadedclient import WebSocketClient
 import time, requests, json, os
 #from pyplot import live_plotter
 import numpy as np
-from pyqtgraph.Qt import QtGui, QtCore
+from pyqtgraph.Qt import QtWidgets, QtCore
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph.ptime import time
@@ -13,7 +13,7 @@ import sys
 host = "dynbalabot.local" #example
 websocketHost = "ws://" + host + "/ws"
 #host = "ws://192.168.0.160/ws"
-app = QtGui.QApplication([])
+app = QtWidgets.QApplication([])
 pripojeno = False
 dt = 10  # obnovovaci frekvence grafu (aktualńe 200hz)
 size = 700
@@ -49,24 +49,24 @@ def tlacitko():
 def close_app():
     sys.exit()
 
-if not QtGui.QApplication.instance():
-    app = QtGui.QApplication([])
+if not QtWidgets.QApplication.instance():
+    app = QtWidgets.QApplication([])
 else:
-    app = QtGui.QApplication.instance()
+    app = QtWidgets.QApplication.instance()
 
-win = QtGui.QWidget()
+win = QtWidgets.QWidget()
 win.setWindowTitle("Graf")
 win.resize(1000, 600)
-layout = QtGui.QGridLayout()
+layout = QtWidgets.QGridLayout()
 win.setLayout(layout)
 
-b1 = QtGui.QPushButton("Pripojit")
+b1 = QtWidgets.QPushButton("Pripojit")
 b1.clicked.connect(tlacitko)
 
-#b2 = QtGui.QPushButton("Close port")
+#b2 = QtWidgets.QPushButton("Close port")
 #b2.clicked.connect(close_port)
 
-#t1 = QtGui.QLineEdit("Enter Device Serial")
+#t1 = QtWidgets.QLineEdit("Enter Device Serial")
 
 p1 = pg.PlotWidget()
 p1.setRange(yRange=[-15000, 15000]) #max hodnoty vstupnich hodnot

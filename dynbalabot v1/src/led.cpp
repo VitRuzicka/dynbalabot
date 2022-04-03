@@ -20,6 +20,13 @@ void heartbeat(){
     leds[0] = CHSV(random8(),255,255);
     FastLED.show();
 }
+void nastavBarvu(uint8_t redC=0, uint8_t greenC=0, uint8_t blueC=0){
+    leds[0].red = redC;
+    leds[0].green = greenC;
+    leds[0].blue = blueC;
+    FastLED.show();
+    
+}
 void zelena(uint8_t stav){ //tri stavy 0,1 a 2 (toggle)
 pinMode(SIG1, OUTPUT);
 if(stav == 0){

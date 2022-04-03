@@ -29,10 +29,10 @@ IPAddress subnet(255,255,255,0);
 
 
 
-float Kp = 17;  // 14 pouze pro P.....18 pro spojení s D
-float Kd = 0.6; //                   -0.5 pro spojení s P
+float Kp = 26;  // 14 pouze pro P.....18 pro spojení s D
+float Kd = 0; //                   -0.5 pro spojení s P
 float Ki = 0;  //nemá efekt na výsledek :(
-float offsetUhel = -1.9;   //upravit dle instalace čidla - ve st. - kalibrováno pomoci prearm tlačítka
+float offsetUhel = 0.0;   //upravit dle instalace čidla - ve st. - kalibrováno pomoci prearm tlačítka
 float cilovyUhel  = 0.0;     // tento úhel bude měněn ovladačem (setpoint)
 volatile bool PID;
 volatile int vystup;
@@ -53,7 +53,7 @@ float VCC = 0.0;
 
 void setup() {
   konfigurujAdresovatelne();
-  heartbeat();
+  nastavBarvu(0,0,255); //modra led pri spousteni
   inicializujHB();
   Serial.begin(115200);
   prijimac.begin(18,19, true);;
@@ -138,21 +138,29 @@ if (PID) { //spousteno podle runTime
     //pridat dynamicke odcitani casu od posledniho behu
     PID = false;
     error = (soucasnyUhel - offsetUhel) - cilovyUhel ;
-    soucetErr = soucetErr + error;  
+    soucetErr += error;  
     //soucetErr = constrain(soucetErr, -maxHodnota, maxHodnota);  
     //calculate output from P, I and D values
-    vystup = Kp*(error) + Ki*(soucetErr)*runTime + Kd*(soucasnyUhel-predUhel)/runTime;
-    predUhel = soucasnyUhel;
-
+    vystup = Kp*(error) + Ki*(soucetErr)*runTime + Kd*((soucasnyUhel-offsetUhel)-predUhel)/runTime;
+    predUhel = (soucasnyUhel - offsetUhel);
+    //Serial.println(digitalRead(0));
     if(failSafe || channels[4] < 500)
     {
+     
       stopMot(); //nouzové zastavení
     }
     else{
-      //Send(0,clip(channels[2]-230, 400, -400));  //pro testování plynu přes ovladač
-      //Serial.print(clip(channels[2]-230, 300, -300));Serial.println("");
       
+      //Send(0,constrain(channels[2]-230, 0, 1000));  //pro testování plynu přes ovladač
+      //Serial.print(clip(channels[2]-230, 1000, 0));Serial.print(" ");
+      Serial.print(soucasnyUhel);
+      Serial.print(" ");
+      Serial.print(constrain(kompenzaceDEADBAND(vystup, DEADBAND, deadMot), -maxHodnota, maxHodnota));
+      Serial.print(" ");
+      Serial.println(Kp);
       Send(0, constrain(kompenzaceDEADBAND(vystup, DEADBAND, deadMot), -maxHodnota, maxHodnota)); //tento prikaz posila vystup PID na motory
+      //Send(0, constrain(vystup, (-1) * maxHodnota, maxHodnota)); //tento prikaz posila vystup PID na motory
+      
       //cilovyUhel = map(channels[1], 200, 1800, 5, -5); //rizeni uhlu z ovladace...nutno zmenit za lateralni kontroler
 
     }
@@ -161,7 +169,7 @@ if (PID) { //spousteno podle runTime
 
 if(prijimac.read(&channels[0], &failSafe, &lostFrame)){
   //kalibrace uhlu kolmého k zemi (aby robot stal rovne)
-  if(channels[5] > 500){
+  if(channels[5] > 500 || !digitalRead(0)){
     offsetUhel = soucasnyUhel;
   }
 
@@ -182,7 +190,13 @@ lt = CasLoopu;
     Receive(); //zkusit presunout do nejrychlejsi casti kodu
     VCC = analogRead(VCCPIN)*(33.0/4096)+1;
     odesliTelemetrii(looptime);
-    heartbeat();
+  //barva led odpovidajici stavu
+    if(failSafe){ nastavBarvu(255,0,0); //cervena pokud neni pripojeny ovladac
+    }
+    else{nastavBarvu(0, 255, 0); //zelena pokud vse funguje jak ma
+    }
+
+    //heartbeat();
     //Serial.println(looptime);
     //Serial.print(digitalRead(ENDPIN1)); Serial.print(" "); Serial.println(digitalRead(ENDPIN2));
 
@@ -196,7 +210,7 @@ lt = CasLoopu;
 
  #ifdef DIAG  
   Serial.print("Uhel IMU: ");
-  Serial.print(ypr[3] * 180/M_PI);
+  Serial.print(soucasnyUhel);
   Serial.print(" PID: ");
   Serial.print(" OUTPUT: ");
   Serial.println(vystup);

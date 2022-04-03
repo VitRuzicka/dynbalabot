@@ -20,7 +20,7 @@ void runKrokace(){
    // stepper1.runSpeed();
    // stepper2.runSpeed();
    if(!digitalRead(0)){
-       movePracovniPoloha();
+       //movePracovniPoloha();
    }
   
 }

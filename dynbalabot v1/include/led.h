@@ -9,3 +9,4 @@ void zelena(uint8_t);
 void zluta(uint8_t);
 void konfigurujAdresovatelne();
 void heartbeat();
+void nastavBarvu(uint8_t redC, uint8_t greenC, uint8_t blueC);

@@ -96,7 +96,7 @@ void nactiGyro(){
         mpu.dmpGetQuaternion(&q, fifoBuffer);
         mpu.dmpGetGravity(&gravity, &q);
         mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
-        soucasnyUhel = ypr[2] * 180/M_PI; //uhel na ose pitch, lze vymenit za roll
+        soucasnyUhel = -1.0 * ypr[1] * 180/M_PI; //uhel na ose pitch, lze vymenit za roll
     }
 
 }

@@ -1,4 +1,5 @@
 #include "hoverboard_komunikace.h"
+#include "config.h"
 #define SERIAL_BAUD         115200      // [-] Baud rate for built-in Serial (used for the Serial Monitor)
 #define START_FRAME         0xABCD     	// [-] Start frme definition for reliable serial communication
 #define TIME_SEND           100         // [ms] Sending time interval
@@ -65,10 +66,7 @@ void Receive()
     }
 
   // If DEBUG_RX is defined print all incoming bytes
-  #ifdef DEBUG_RX
-        Serial.print(incomingByte);
-        return;
-    #endif
+ 
 
     // Copy received data
     if (bufStartFrame == START_FRAME) {	                    // Initialize if new data is detected
@@ -92,7 +90,7 @@ void Receive()
             // Copy the new data
             memcpy(&Feedback, &NewFeedback, sizeof(SerialFeedback));
 
-            #ifdef DIAG
+            #ifdef DEBUG_RX
             Serial.print("1: ");   Serial.print(Feedback.cmd1);
             Serial.print(" 2: ");  Serial.print(Feedback.cmd2);
             Serial.print(" 3: ");  Serial.print(Feedback.speedR_meas);
@@ -113,12 +111,12 @@ void Receive()
 void stopMot(){
     Send(0,0);
 }
-int kompenzaceDEADBAND(int in, int DEADBAND, int offset){
-    if(in > DEADBAND){
+int kompenzaceDEADBAND(int in, int deadband, int offset){
+    if(in > deadband){
         in += offset;
 
       }
-      else if(in < -DEADBAND){
+      else if(in < -deadband){
         in -= offset;
       }
       return in;

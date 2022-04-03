@@ -30,8 +30,8 @@ void odesliTelemetrii(int looptime){
     StaticJsonDocument<size> json; 
 
     json["nap"] = String(VCC);
-    json["pid"] =  channels[4] < 500 ? "BĚŽÍ" : "NEBĚŽÍ";
-    json["fs"] =  failSafe ? "OK" : "NOT OK";
+    json["pid"] =  channels[4] < 500 ? "NEBĚŽÍ" : "BĚŽÍ";
+    json["fs"] =  failSafe ? "NOT OK" : "OK";
     json["mpuOK"] =  devStatus == 0 ? "OK" : "NOT OK";
     json["lt"] = looptime;
     char data[150]; 
@@ -77,7 +77,8 @@ void zpracujZpravu(void *arg, uint8_t *data, size_t len) {
         Serial.print((char*)akce);       Serial.print("\t");
         Serial.print((char*)konstantaP); Serial.print("\t"); 
         Serial.print((char*)konstantaI); Serial.print("\t"); 
-        Serial.print((char*)konstantaD); Serial.print("\t"); Serial.println(); 
+        Serial.print((char*)konstantaD); Serial.print("\t"); 
+        Serial.print(atof(konstantaP)); Serial.println(); 
 
         if (strcmp(akce, "update") == 0) {  //pokud je hodnota akce:hodnota dojde k odeslani aktualnich hodnot, pokud ale bude neco jineho (0), pak se nactou PID data 
             odesliHodnoty();
@@ -85,16 +86,10 @@ void zpracujZpravu(void *arg, uint8_t *data, size_t len) {
         else if(strcmp(akce, "tel") == 0){
           telemetrie = !telemetrie;
         }
-        else{
-        if(isAlphaNumeric(atof(konstantaP))){
-            Kp = atof(konstantaP);
-        }
-        if(isAlphaNumeric(atof(konstantaI))){
-            Ki = atof(konstantaI);
-        }
-        if(isAlphaNumeric(atof(konstantaD))){
-            Kd = atof(konstantaD);
-        }
+        else if (strcmp(akce, "0") == 0){
+            Kp = atof((char*)konstantaP);
+            Ki = atof((char*)konstantaI);
+            Kd = atof((char*)konstantaD);
         }
   }
 }
