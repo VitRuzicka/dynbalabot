@@ -144,21 +144,21 @@ if (PID) { //spousteno podle runTime
     vystup = Kp*(error) + Ki*(soucetErr)*runTime + Kd*((soucasnyUhel-offsetUhel)-predUhel)/runTime;
     predUhel = (soucasnyUhel - offsetUhel);
     //Serial.println(digitalRead(0));
-    if(failSafe || channels[4] < 500)
+    if(failSafe || channels[4] < 500) //neni failsafe ani zaarmovano
     {
      
       stopMot(); //nouzové zastavení
     }
     else{
       
-      //Send(0,constrain(channels[2]-230, 0, 1000));  //pro testování plynu přes ovladač
+      Send(0,constrain(channels[2]-230, 0, 1000));  //pro testování plynu přes ovladač
       //Serial.print(clip(channels[2]-230, 1000, 0));Serial.print(" ");
       Serial.print(soucasnyUhel);
       Serial.print(" ");
       Serial.print(constrain(kompenzaceDEADBAND(vystup, DEADBAND, deadMot), -maxHodnota, maxHodnota));
       Serial.print(" ");
       Serial.println(Kp);
-      Send(0, constrain(kompenzaceDEADBAND(vystup, DEADBAND, deadMot), -maxHodnota, maxHodnota)); //tento prikaz posila vystup PID na motory
+      //Send(0, constrain(kompenzaceDEADBAND(vystup, DEADBAND, deadMot), -maxHodnota, maxHodnota)); //tento prikaz posila vystup PID na motory
       //Send(0, constrain(vystup, (-1) * maxHodnota, maxHodnota)); //tento prikaz posila vystup PID na motory
       
       //cilovyUhel = map(channels[1], 200, 1800, 5, -5); //rizeni uhlu z ovladace...nutno zmenit za lateralni kontroler
@@ -191,7 +191,7 @@ lt = CasLoopu;
     VCC = analogRead(VCCPIN)*(33.0/4096)+1;
     odesliTelemetrii(looptime);
   //barva led odpovidajici stavu
-    if(failSafe){ nastavBarvu(255,0,0); //cervena pokud neni pripojeny ovladac
+    if(channels[4] < 500){ nastavBarvu(255,0,0); //cervena pokud neni pripojeny ovladac
     }
     else{nastavBarvu(0, 255, 0); //zelena pokud vse funguje jak ma
     }
